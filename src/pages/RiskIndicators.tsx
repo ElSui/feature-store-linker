@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { dataStore } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
+import Breadcrumb from '@/components/ui/breadcrumb';
+import RelationshipSection from '@/components/RelationshipSection';
 
 const RiskIndicatorsList = () => {
   const riskIndicators = dataStore.getRiskIndicators();
@@ -94,9 +96,6 @@ const RiskIndicatorDetail = () => {
   const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
   const unlinkedFeatures = allFeatures.filter(feature => !linkedFeatures.find(linked => linked.id === feature.id));
 
-  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>('');
-  const [selectedFeatureId, setSelectedFeatureId] = useState<string>('');
-
   if (!riskIndicator) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -113,28 +112,26 @@ const RiskIndicatorDetail = () => {
     );
   }
 
-  const handleAddUseCaseLink = () => {
-    if (selectedUseCaseId) {
-      dataStore.addUseCaseRiskLink(Number(selectedUseCaseId), riskIndicator.id);
-      setSelectedUseCaseId('');
-      navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
-    }
+  const handleLinkUseCases = (useCaseIds: number[]) => {
+    useCaseIds.forEach(useCaseId => {
+      dataStore.addUseCaseRiskLink(useCaseId, riskIndicator.id);
+    });
+    navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
   };
 
-  const handleAddFeatureLink = () => {
-    if (selectedFeatureId) {
-      dataStore.addRiskFeatureLink(riskIndicator.id, Number(selectedFeatureId));
-      setSelectedFeatureId('');
-      navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
-    }
-  };
-
-  const handleRemoveUseCaseLink = (useCaseId: number) => {
+  const handleUnlinkUseCase = (useCaseId: number) => {
     dataStore.removeUseCaseRiskLink(useCaseId, riskIndicator.id);
     navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
   };
 
-  const handleRemoveFeatureLink = (featureId: number) => {
+  const handleLinkFeatures = (featureIds: number[]) => {
+    featureIds.forEach(featureId => {
+      dataStore.addRiskFeatureLink(riskIndicator.id, featureId);
+    });
+    navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
+  };
+
+  const handleUnlinkFeature = (featureId: number) => {
     dataStore.removeRiskFeatureLink(riskIndicator.id, featureId);
     navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
   };
@@ -142,24 +139,28 @@ const RiskIndicatorDetail = () => {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'AI Model Feature':
-        return 'bg-blue-500 text-white';
+        return 'default';
       case 'Simple Rule':
-        return 'bg-green-500 text-white';
+        return 'secondary';
       case 'Calculation':
-        return 'bg-orange-500 text-white';
+        return 'outline';
       default:
-        return 'bg-gray-500 text-white';
+        return 'secondary';
     }
   };
+
+  const breadcrumbItems = [
+    { label: 'Risk Indicators', href: '/risk-indicators' },
+    { label: riskIndicator.name, type: 'risk-indicator' as const }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumb items={breadcrumbItems} />
+        
         <div className="mb-6">
-          <Link to="/risk-indicators" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-            ← Back to Risk Indicators
-          </Link>
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{riskIndicator.name}</h1>
@@ -188,117 +189,31 @@ const RiskIndicatorDetail = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Use Cases</CardTitle>
-                <CardDescription>Use cases associated with this risk indicator</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {linkedUseCases.map((useCase) => (
-                    <div key={useCase.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <Link to={`/use-cases/${useCase.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                          {useCase.name}
-                        </Link>
-                        <p className="text-sm text-gray-600">{useCase.description}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveUseCaseLink(useCase.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {unlinkedUseCases.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Label htmlFor="usecase-select">Add Use Case Link</Label>
-                      <div className="flex gap-2 mt-2">
-                        <select
-                          id="usecase-select"
-                          value={selectedUseCaseId}
-                          onChange={(e) => setSelectedUseCaseId(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        >
-                          <option value="">Select a use case...</option>
-                          {unlinkedUseCases.map((useCase) => (
-                            <option key={useCase.id} value={useCase.id}>
-                              {useCase.name}
-                            </option>
-                          ))}
-                        </select>
-                        <Button onClick={handleAddUseCaseLink} disabled={!selectedUseCaseId}>
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <RelationshipSection
+              title="Linked Use Cases"
+              description="Use cases associated with this risk indicator"
+              linkedEntities={linkedUseCases}
+              availableEntities={unlinkedUseCases}
+              entityType="use-cases"
+              onLink={handleLinkUseCases}
+              onUnlink={handleUnlinkUseCase}
+            />
           </div>
 
           <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Features</CardTitle>
-                <CardDescription>Features (AI models, rules, calculations) associated with this risk indicator</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {linkedFeatures.map((feature) => (
-                    <div key={feature.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <Link to={`/features/${feature.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                          {feature.name}
-                        </Link>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge className={`text-xs ${getTypeColor(feature.type)}`}>
-                            {feature.type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveFeatureLink(feature.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {unlinkedFeatures.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Label htmlFor="feature-select">Add Feature Link</Label>
-                      <div className="flex gap-2 mt-2">
-                        <select
-                          id="feature-select"
-                          value={selectedFeatureId}
-                          onChange={(e) => setSelectedFeatureId(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        >
-                          <option value="">Select a feature...</option>
-                          {unlinkedFeatures.map((feature) => (
-                            <option key={feature.id} value={feature.id}>
-                              {feature.name} ({feature.type})
-                            </option>
-                          ))}
-                        </select>
-                        <Button onClick={handleAddFeatureLink} disabled={!selectedFeatureId}>
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <RelationshipSection
+              title="Linked Features"
+              description="Features (AI models, rules, calculations) associated with this risk indicator"
+              linkedEntities={linkedFeatures}
+              availableEntities={unlinkedFeatures}
+              entityType="features"
+              onLink={handleLinkFeatures}
+              onUnlink={handleUnlinkFeature}
+              getBadgeInfo={(feature) => ({ 
+                text: feature.type || 'Unknown Type',
+                variant: getTypeColor(feature.type || '')
+              })}
+            />
           </div>
         </div>
       </div>

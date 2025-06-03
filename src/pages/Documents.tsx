@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { FileText, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
@@ -10,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { dataStore, RegulatoryDocument } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
+import Breadcrumb from '@/components/ui/breadcrumb';
+import RelationshipSection from '@/components/RelationshipSection';
 
 const DocumentsList = () => {
   const documents = dataStore.getDocuments();
@@ -96,8 +97,6 @@ const DocumentDetail = () => {
   const allUseCases = dataStore.getUseCases();
   const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
 
-  const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>('');
-
   if (!document) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -114,28 +113,47 @@ const DocumentDetail = () => {
     );
   }
 
-  const handleAddLink = () => {
-    if (selectedUseCaseId) {
-      dataStore.addDocumentUseCaseLink(document.id, Number(selectedUseCaseId));
-      setSelectedUseCaseId('');
-      // Force re-render
-      navigate(`/documents/${document.id}`, { replace: true });
-    }
+  const handleLinkUseCases = (useCaseIds: number[]) => {
+    useCaseIds.forEach(useCaseId => {
+      dataStore.addDocumentUseCaseLink(document.id, useCaseId);
+    });
+    navigate(`/documents/${document.id}`, { replace: true });
   };
 
-  const handleRemoveLink = (useCaseId: number) => {
+  const handleUnlinkUseCase = (useCaseId: number) => {
     dataStore.removeDocumentUseCaseLink(document.id, useCaseId);
     navigate(`/documents/${document.id}`, { replace: true });
   };
+
+  const breadcrumbItems = [
+    { label: 'Documents', href: '/documents' },
+    { label: document.name, type: 'document' as const }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumb.Root>
+          <Breadcrumb.List>
+            {breadcrumbItems.map((item, index) => (
+              <React.Fragment key={index}>
+                <Breadcrumb.Item>
+                  {item.href ? (
+                    <Breadcrumb.Link href={item.href}>{item.label}</Breadcrumb.Link>
+                  ) : (
+                    <Breadcrumb.Page>{item.label}</Breadcrumb.Page>
+                  )}
+                </Breadcrumb.Item>
+                {index < breadcrumbItems.length - 1 && (
+                  <Breadcrumb.Separator />
+                )}
+              </React.Fragment>
+            ))}
+          </Breadcrumb.List>
+        </Breadcrumb.Root>
+        
         <div className="mb-6">
-          <Link to="/documents" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-            ← Back to Documents
-          </Link>
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{document.name}</h1>
@@ -173,58 +191,15 @@ const DocumentDetail = () => {
           </div>
 
           <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Use Cases</CardTitle>
-                <CardDescription>Use cases associated with this document</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {linkedUseCases.map((useCase) => (
-                    <div key={useCase.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <Link to={`/use-cases/${useCase.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                          {useCase.name}
-                        </Link>
-                        <p className="text-sm text-gray-600">{useCase.description}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveLink(useCase.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {unlinkedUseCases.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Label htmlFor="usecase-select">Add Use Case Link</Label>
-                      <div className="flex gap-2 mt-2">
-                        <select
-                          id="usecase-select"
-                          value={selectedUseCaseId}
-                          onChange={(e) => setSelectedUseCaseId(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        >
-                          <option value="">Select a use case...</option>
-                          {unlinkedUseCases.map((useCase) => (
-                            <option key={useCase.id} value={useCase.id}>
-                              {useCase.name}
-                            </option>
-                          ))}
-                        </select>
-                        <Button onClick={handleAddLink} disabled={!selectedUseCaseId}>
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <RelationshipSection
+              title="Linked Use Cases"
+              description="Use cases associated with this document"
+              linkedEntities={linkedUseCases}
+              availableEntities={unlinkedUseCases}
+              entityType="use-cases"
+              onLink={handleLinkUseCases}
+              onUnlink={handleUnlinkUseCase}
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Target, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
@@ -9,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { dataStore } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
+import Breadcrumb from '@/components/Breadcrumb';
+import RelationshipSection from '@/components/RelationshipSection';
 
 const UseCasesList = () => {
   const useCases = dataStore.getUseCases();
@@ -91,9 +92,6 @@ const UseCaseDetail = () => {
   const unlinkedDocuments = allDocuments.filter(doc => !linkedDocuments.find(linked => linked.id === doc.id));
   const unlinkedRiskIndicators = allRiskIndicators.filter(risk => !linkedRiskIndicators.find(linked => linked.id === risk.id));
 
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string>('');
-  const [selectedRiskId, setSelectedRiskId] = useState<string>('');
-
   if (!useCase) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -110,40 +108,42 @@ const UseCaseDetail = () => {
     );
   }
 
-  const handleAddDocumentLink = () => {
-    if (selectedDocumentId) {
-      dataStore.addDocumentUseCaseLink(Number(selectedDocumentId), useCase.id);
-      setSelectedDocumentId('');
-      navigate(`/use-cases/${useCase.id}`, { replace: true });
-    }
+  const handleLinkDocuments = (documentIds: number[]) => {
+    documentIds.forEach(documentId => {
+      dataStore.addDocumentUseCaseLink(documentId, useCase.id);
+    });
+    navigate(`/use-cases/${useCase.id}`, { replace: true });
   };
 
-  const handleAddRiskLink = () => {
-    if (selectedRiskId) {
-      dataStore.addUseCaseRiskLink(useCase.id, Number(selectedRiskId));
-      setSelectedRiskId('');
-      navigate(`/use-cases/${useCase.id}`, { replace: true });
-    }
-  };
-
-  const handleRemoveDocumentLink = (documentId: number) => {
+  const handleUnlinkDocument = (documentId: number) => {
     dataStore.removeDocumentUseCaseLink(documentId, useCase.id);
     navigate(`/use-cases/${useCase.id}`, { replace: true });
   };
 
-  const handleRemoveRiskLink = (riskId: number) => {
+  const handleLinkRiskIndicators = (riskIds: number[]) => {
+    riskIds.forEach(riskId => {
+      dataStore.addUseCaseRiskLink(useCase.id, riskId);
+    });
+    navigate(`/use-cases/${useCase.id}`, { replace: true });
+  };
+
+  const handleUnlinkRiskIndicator = (riskId: number) => {
     dataStore.removeUseCaseRiskLink(useCase.id, riskId);
     navigate(`/use-cases/${useCase.id}`, { replace: true });
   };
+
+  const breadcrumbItems = [
+    { label: 'Use Cases', href: '/use-cases' },
+    { label: useCase.name, type: 'use-case' as const }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Breadcrumb items={breadcrumbItems} />
+        
         <div className="mb-6">
-          <Link to="/use-cases" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-            ← Back to Use Cases
-          </Link>
           <div className="flex justify-between items-start">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{useCase.name}</h1>
@@ -171,113 +171,29 @@ const UseCaseDetail = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Documents</CardTitle>
-                <CardDescription>Regulatory documents associated with this use case</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {linkedDocuments.map((document) => (
-                    <div key={document.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <Link to={`/documents/${document.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                          {document.name}
-                        </Link>
-                        <p className="text-sm text-gray-600">{document.source} - {document.region}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveDocumentLink(document.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {unlinkedDocuments.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Label htmlFor="document-select">Add Document Link</Label>
-                      <div className="flex gap-2 mt-2">
-                        <select
-                          id="document-select"
-                          value={selectedDocumentId}
-                          onChange={(e) => setSelectedDocumentId(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        >
-                          <option value="">Select a document...</option>
-                          {unlinkedDocuments.map((document) => (
-                            <option key={document.id} value={document.id}>
-                              {document.name}
-                            </option>
-                          ))}
-                        </select>
-                        <Button onClick={handleAddDocumentLink} disabled={!selectedDocumentId}>
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <RelationshipSection
+              title="Linked Documents"
+              description="Regulatory documents associated with this use case"
+              linkedEntities={linkedDocuments}
+              availableEntities={unlinkedDocuments}
+              entityType="documents"
+              onLink={handleLinkDocuments}
+              onUnlink={handleUnlinkDocument}
+              getBadgeInfo={(doc) => ({ text: `${doc.source} - ${doc.region}` })}
+            />
           </div>
 
           <div>
-            <Card>
-              <CardHeader>
-                <CardTitle>Linked Risk Indicators</CardTitle>
-                <CardDescription>Risk indicators associated with this use case</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {linkedRiskIndicators.map((risk) => (
-                    <div key={risk.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <Link to={`/risk-indicators/${risk.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                          {risk.name}
-                        </Link>
-                        <p className="text-sm text-gray-600">{risk.category}</p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveRiskLink(risk.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  
-                  {unlinkedRiskIndicators.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Label htmlFor="risk-select">Add Risk Indicator Link</Label>
-                      <div className="flex gap-2 mt-2">
-                        <select
-                          id="risk-select"
-                          value={selectedRiskId}
-                          onChange={(e) => setSelectedRiskId(e.target.value)}
-                          className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                        >
-                          <option value="">Select a risk indicator...</option>
-                          {unlinkedRiskIndicators.map((risk) => (
-                            <option key={risk.id} value={risk.id}>
-                              {risk.name}
-                            </option>
-                          ))}
-                        </select>
-                        <Button onClick={handleAddRiskLink} disabled={!selectedRiskId}>
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+            <RelationshipSection
+              title="Linked Risk Indicators"
+              description="Risk indicators associated with this use case"
+              linkedEntities={linkedRiskIndicators}
+              availableEntities={unlinkedRiskIndicators}
+              entityType="risk-indicators"
+              onLink={handleLinkRiskIndicators}
+              onUnlink={handleUnlinkRiskIndicator}
+              getBadgeInfo={(risk) => ({ text: risk.category || 'Uncategorized' })}
+            />
           </div>
         </div>
       </div>
