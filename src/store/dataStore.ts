@@ -21,10 +21,10 @@ export interface RiskIndicator {
   category: string;
 }
 
-export interface Control {
+export interface Feature {
   id: number;
   name: string;
-  type: 'Feature' | 'Rule';
+  type: 'AI Model Feature' | 'Simple Rule' | 'Calculation';
   description: string;
   logic_summary: string;
 }
@@ -39,9 +39,9 @@ export interface UseCaseRiskLink {
   risk_id: number;
 }
 
-export interface RiskControlLink {
+export interface RiskFeatureLink {
   risk_id: number;
-  control_id: number;
+  feature_id: number;
 }
 
 class DataStore {
@@ -56,19 +56,19 @@ class DataStore {
     },
     {
       id: 2,
-      name: "FATF Guidance on Digital Assets",
+      name: "EU Payment Services Directive",
+      source: "EU Commission",
+      region: "EU",
+      publication_date: "2023-03-20",
+      summary: "Regulatory framework for payment services within the European Union"
+    },
+    {
+      id: 3,
+      name: "Guidance on Virtual Assets",
       source: "FATF",
       region: "Global",
       publication_date: "2023-06-30",
       summary: "Updated guidance for virtual asset service providers and digital asset compliance"
-    },
-    {
-      id: 3,
-      name: "EU 5th AML Directive",
-      source: "European Union",
-      region: "EU",
-      publication_date: "2022-12-10",
-      summary: "Enhanced anti-money laundering measures for European financial institutions"
     }
   ];
 
@@ -85,7 +85,7 @@ class DataStore {
     },
     {
       id: 3,
-      name: "Trade Based Money Laundering",
+      name: "Trade Based Money Laundering (TBML) Prevention",
       description: "Detection and prevention of trade-based money laundering schemes"
     }
   ];
@@ -93,66 +93,99 @@ class DataStore {
   private riskIndicators: RiskIndicator[] = [
     {
       id: 1,
-      name: "Unusual Transaction Patterns to High-Risk Countries",
-      description: "Transactions showing abnormal patterns directed to high-risk jurisdictions",
-      category: "Geographic Risk"
+      name: "Transactions to/from High-Risk Jurisdictions",
+      description: "Transactions showing patterns to/from jurisdictions with higher AML risk",
+      category: "Geographic"
     },
     {
       id: 2,
       name: "Rapid Movement of Funds",
       description: "Quick succession of transactions indicating potential layering activity",
-      category: "Transactional Velocity"
+      category: "Velocity"
     },
     {
       id: 3,
-      name: "Structuring Behavior",
-      description: "Multiple transactions just below reporting thresholds",
-      category: "Transaction Structuring"
+      name: "Structuring/Smurfing Behavior",
+      description: "Multiple transactions just below reporting thresholds to avoid detection",
+      category: "Transactional Pattern"
+    },
+    {
+      id: 4,
+      name: "Complex Corporate Ownership Structures",
+      description: "Entities with complex or opaque ownership structures that may obscure beneficial ownership",
+      category: "KYC/Entity Risk"
+    },
+    {
+      id: 5,
+      name: "Use of Anonymity-Enhanced Virtual Assets",
+      description: "Transactions involving privacy coins or mixing services that enhance anonymity",
+      category: "Digital Assets"
     }
   ];
 
-  private controls: Control[] = [
+  private features: Feature[] = [
     {
       id: 1,
-      name: "High-Risk Jurisdiction Velocity Alert",
-      type: "Feature",
+      name: "High-Risk Jurisdiction Transaction Count",
+      type: "AI Model Feature",
       description: "Monitors transaction frequency and volume to high-risk countries",
-      logic_summary: "Counts transactions to specified countries in a time window and alerts on threshold breach"
+      logic_summary: "Uses machine learning to analyze transaction patterns to designated high-risk jurisdictions. Implemented in PySpark."
     },
     {
       id: 2,
-      name: "Transaction Velocity Rule",
-      type: "Rule",
-      description: "Blocks transactions when velocity exceeds defined parameters",
-      logic_summary: "Automatically blocks when transaction count exceeds 10 per hour for single customer"
+      name: "Transaction Velocity Threshold Alert",
+      type: "Simple Rule",
+      description: "Alerts when transaction velocity exceeds defined parameters",
+      logic_summary: "Simple threshold rule: alerts when transaction count exceeds 10 per hour for single customer"
     },
     {
       id: 3,
-      name: "Structuring Detection Feature",
-      type: "Feature",
-      description: "Identifies potential structuring patterns in customer transactions",
-      logic_summary: "Analyzes transaction amounts and frequencies to detect structuring behavior"
+      name: "Structuring Detection Model",
+      type: "AI Model Feature",
+      description: "AI model to identify potential structuring patterns in customer transactions",
+      logic_summary: "Deep learning model analyzing transaction amounts, frequencies, and timing patterns. Uses TensorFlow."
+    },
+    {
+      id: 4,
+      name: "Ultimate Beneficial Owner Verification Rule",
+      type: "Simple Rule",
+      description: "Ensures proper UBO identification for corporate entities",
+      logic_summary: "Rule-based verification requiring UBO disclosure for entities above ownership thresholds"
+    },
+    {
+      id: 5,
+      name: "VA Mixer/Tumbler Interaction Feature",
+      type: "AI Model Feature",
+      description: "Detects interactions with virtual asset mixing or tumbling services",
+      logic_summary: "Blockchain analysis model identifying transactions with known mixing services. Uses graph analysis algorithms."
     }
   ];
 
   private documentUseCaseLinks: DocumentUseCaseLink[] = [
     { document_id: 1, usecase_id: 1 },
     { document_id: 1, usecase_id: 2 },
+    { document_id: 2, usecase_id: 1 },
     { document_id: 2, usecase_id: 2 },
-    { document_id: 3, usecase_id: 3 }
+    { document_id: 3, usecase_id: 2 }
   ];
 
   private useCaseRiskLinks: UseCaseRiskLink[] = [
     { usecase_id: 1, risk_id: 1 },
     { usecase_id: 1, risk_id: 2 },
-    { usecase_id: 2, risk_id: 2 },
-    { usecase_id: 3, risk_id: 3 }
+    { usecase_id: 2, risk_id: 1 },
+    { usecase_id: 2, risk_id: 3 },
+    { usecase_id: 2, risk_id: 5 },
+    { usecase_id: 3, risk_id: 4 },
+    { usecase_id: 3, risk_id: 1 }
   ];
 
-  private riskControlLinks: RiskControlLink[] = [
-    { risk_id: 1, control_id: 1 },
-    { risk_id: 2, control_id: 2 },
-    { risk_id: 3, control_id: 3 }
+  private riskFeatureLinks: RiskFeatureLink[] = [
+    { risk_id: 1, feature_id: 1 },
+    { risk_id: 2, feature_id: 2 },
+    { risk_id: 3, feature_id: 3 },
+    { risk_id: 3, feature_id: 2 },
+    { risk_id: 4, feature_id: 4 },
+    { risk_id: 5, feature_id: 5 }
   ];
 
   // Document methods
@@ -259,43 +292,43 @@ class DataStore {
       this.riskIndicators.splice(index, 1);
       // Remove associated links
       this.useCaseRiskLinks = this.useCaseRiskLinks.filter(link => link.risk_id !== id);
-      this.riskControlLinks = this.riskControlLinks.filter(link => link.risk_id !== id);
+      this.riskFeatureLinks = this.riskFeatureLinks.filter(link => link.risk_id !== id);
       return true;
     }
     return false;
   }
 
-  // Control methods
-  getControls(): Control[] {
-    return this.controls;
+  // Feature methods (renamed from Control)
+  getFeatures(): Feature[] {
+    return this.features;
   }
 
-  getControl(id: number): Control | undefined {
-    return this.controls.find(c => c.id === id);
+  getFeature(id: number): Feature | undefined {
+    return this.features.find(f => f.id === id);
   }
 
-  addControl(control: Omit<Control, 'id'>): Control {
-    const newId = Math.max(...this.controls.map(c => c.id), 0) + 1;
-    const newControl = { ...control, id: newId };
-    this.controls.push(newControl);
-    return newControl;
+  addFeature(feature: Omit<Feature, 'id'>): Feature {
+    const newId = Math.max(...this.features.map(f => f.id), 0) + 1;
+    const newFeature = { ...feature, id: newId };
+    this.features.push(newFeature);
+    return newFeature;
   }
 
-  updateControl(id: number, updates: Partial<Control>): Control | undefined {
-    const index = this.controls.findIndex(c => c.id === id);
+  updateFeature(id: number, updates: Partial<Feature>): Feature | undefined {
+    const index = this.features.findIndex(f => f.id === id);
     if (index !== -1) {
-      this.controls[index] = { ...this.controls[index], ...updates };
-      return this.controls[index];
+      this.features[index] = { ...this.features[index], ...updates };
+      return this.features[index];
     }
     return undefined;
   }
 
-  deleteControl(id: number): boolean {
-    const index = this.controls.findIndex(c => c.id === id);
+  deleteFeature(id: number): boolean {
+    const index = this.features.findIndex(f => f.id === id);
     if (index !== -1) {
-      this.controls.splice(index, 1);
+      this.features.splice(index, 1);
       // Remove associated links
-      this.riskControlLinks = this.riskControlLinks.filter(link => link.control_id !== id);
+      this.riskFeatureLinks = this.riskFeatureLinks.filter(link => link.feature_id !== id);
       return true;
     }
     return false;
@@ -330,16 +363,16 @@ class DataStore {
     return this.useCases.filter(uc => linkedUseCaseIds.includes(uc.id));
   }
 
-  getLinkedControlsForRiskIndicator(riskId: number): Control[] {
-    const linkedControlIds = this.riskControlLinks
+  getLinkedFeaturesForRiskIndicator(riskId: number): Feature[] {
+    const linkedFeatureIds = this.riskFeatureLinks
       .filter(link => link.risk_id === riskId)
-      .map(link => link.control_id);
-    return this.controls.filter(c => linkedControlIds.includes(c.id));
+      .map(link => link.feature_id);
+    return this.features.filter(f => linkedFeatureIds.includes(f.id));
   }
 
-  getLinkedRiskIndicatorsForControl(controlId: number): RiskIndicator[] {
-    const linkedRiskIds = this.riskControlLinks
-      .filter(link => link.control_id === controlId)
+  getLinkedRiskIndicatorsForFeature(featureId: number): RiskIndicator[] {
+    const linkedRiskIds = this.riskFeatureLinks
+      .filter(link => link.feature_id === featureId)
       .map(link => link.risk_id);
     return this.riskIndicators.filter(ri => linkedRiskIds.includes(ri.id));
   }
@@ -369,16 +402,16 @@ class DataStore {
       !(link.usecase_id === useCaseId && link.risk_id === riskId));
   }
 
-  addRiskControlLink(riskId: number, controlId: number): void {
-    if (!this.riskControlLinks.find(link => 
-      link.risk_id === riskId && link.control_id === controlId)) {
-      this.riskControlLinks.push({ risk_id: riskId, control_id: controlId });
+  addRiskFeatureLink(riskId: number, featureId: number): void {
+    if (!this.riskFeatureLinks.find(link => 
+      link.risk_id === riskId && link.feature_id === featureId)) {
+      this.riskFeatureLinks.push({ risk_id: riskId, feature_id: featureId });
     }
   }
 
-  removeRiskControlLink(riskId: number, controlId: number): void {
-    this.riskControlLinks = this.riskControlLinks.filter(link => 
-      !(link.risk_id === riskId && link.control_id === controlId));
+  removeRiskFeatureLink(riskId: number, featureId: number): void {
+    this.riskFeatureLinks = this.riskFeatureLinks.filter(link => 
+      !(link.risk_id === riskId && link.feature_id === featureId));
   }
 }
 

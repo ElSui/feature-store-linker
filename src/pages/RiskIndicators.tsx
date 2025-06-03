@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
@@ -88,15 +87,15 @@ const RiskIndicatorDetail = () => {
   const navigate = useNavigate();
   const riskIndicator = dataStore.getRiskIndicator(Number(id));
   const linkedUseCases = dataStore.getLinkedUseCasesForRiskIndicator(Number(id));
-  const linkedControls = dataStore.getLinkedControlsForRiskIndicator(Number(id));
+  const linkedFeatures = dataStore.getLinkedFeaturesForRiskIndicator(Number(id));
   
   const allUseCases = dataStore.getUseCases();
-  const allControls = dataStore.getControls();
+  const allFeatures = dataStore.getFeatures();
   const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
-  const unlinkedControls = allControls.filter(control => !linkedControls.find(linked => linked.id === control.id));
+  const unlinkedFeatures = allFeatures.filter(feature => !linkedFeatures.find(linked => linked.id === feature.id));
 
   const [selectedUseCaseId, setSelectedUseCaseId] = useState<string>('');
-  const [selectedControlId, setSelectedControlId] = useState<string>('');
+  const [selectedFeatureId, setSelectedFeatureId] = useState<string>('');
 
   if (!riskIndicator) {
     return (
@@ -122,10 +121,10 @@ const RiskIndicatorDetail = () => {
     }
   };
 
-  const handleAddControlLink = () => {
-    if (selectedControlId) {
-      dataStore.addRiskControlLink(riskIndicator.id, Number(selectedControlId));
-      setSelectedControlId('');
+  const handleAddFeatureLink = () => {
+    if (selectedFeatureId) {
+      dataStore.addRiskFeatureLink(riskIndicator.id, Number(selectedFeatureId));
+      setSelectedFeatureId('');
       navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
     }
   };
@@ -135,9 +134,22 @@ const RiskIndicatorDetail = () => {
     navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
   };
 
-  const handleRemoveControlLink = (controlId: number) => {
-    dataStore.removeRiskControlLink(riskIndicator.id, controlId);
+  const handleRemoveFeatureLink = (featureId: number) => {
+    dataStore.removeRiskFeatureLink(riskIndicator.id, featureId);
     navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'AI Model Feature':
+        return 'bg-blue-500 text-white';
+      case 'Simple Rule':
+        return 'bg-green-500 text-white';
+      case 'Calculation':
+        return 'bg-orange-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
   };
 
   return (
@@ -233,27 +245,27 @@ const RiskIndicatorDetail = () => {
           <div>
             <Card>
               <CardHeader>
-                <CardTitle>Linked Controls</CardTitle>
-                <CardDescription>Controls (features and rules) associated with this risk indicator</CardDescription>
+                <CardTitle>Linked Features</CardTitle>
+                <CardDescription>Features (AI models, rules, calculations) associated with this risk indicator</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {linkedControls.map((control) => (
-                    <div key={control.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  {linkedFeatures.map((feature) => (
+                    <div key={feature.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
-                        <Link to={`/controls/${control.id}`} className="font-medium text-blue-600 hover:text-blue-800">
-                          {control.name}
+                        <Link to={`/features/${feature.id}`} className="font-medium text-blue-600 hover:text-blue-800">
+                          {feature.name}
                         </Link>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={control.type === 'Feature' ? 'default' : 'secondary'} className="text-xs">
-                            {control.type}
+                          <Badge className={`text-xs ${getTypeColor(feature.type)}`}>
+                            {feature.type}
                           </Badge>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleRemoveControlLink(control.id)}
+                        onClick={() => handleRemoveFeatureLink(feature.id)}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -261,24 +273,24 @@ const RiskIndicatorDetail = () => {
                     </div>
                   ))}
                   
-                  {unlinkedControls.length > 0 && (
+                  {unlinkedFeatures.length > 0 && (
                     <div className="mt-4 pt-4 border-t">
-                      <Label htmlFor="control-select">Add Control Link</Label>
+                      <Label htmlFor="feature-select">Add Feature Link</Label>
                       <div className="flex gap-2 mt-2">
                         <select
-                          id="control-select"
-                          value={selectedControlId}
-                          onChange={(e) => setSelectedControlId(e.target.value)}
+                          id="feature-select"
+                          value={selectedFeatureId}
+                          onChange={(e) => setSelectedFeatureId(e.target.value)}
                           className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
                         >
-                          <option value="">Select a control...</option>
-                          {unlinkedControls.map((control) => (
-                            <option key={control.id} value={control.id}>
-                              {control.name} ({control.type})
+                          <option value="">Select a feature...</option>
+                          {unlinkedFeatures.map((feature) => (
+                            <option key={feature.id} value={feature.id}>
+                              {feature.name} ({feature.type})
                             </option>
                           ))}
                         </select>
-                        <Button onClick={handleAddControlLink} disabled={!selectedControlId}>
+                        <Button onClick={handleAddFeatureLink} disabled={!selectedFeatureId}>
                           Add
                         </Button>
                       </div>
@@ -344,7 +356,7 @@ const RiskIndicatorForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="e.g., Unusual Transaction Patterns to High-Risk Countries"
+                  placeholder="e.g., Transactions to/from High-Risk Jurisdictions"
                   required
                 />
               </div>
@@ -355,7 +367,7 @@ const RiskIndicatorForm = ({ isEdit = false }: { isEdit?: boolean }) => {
                   id="category"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  placeholder="e.g., Geographic Risk, Transactional Velocity"
+                  placeholder="e.g., Geographic, Velocity, Digital Assets"
                 />
               </div>
 

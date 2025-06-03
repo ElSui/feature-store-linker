@@ -1,16 +1,16 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Target, AlertTriangle, Shield, ArrowRight } from 'lucide-react';
+import { FileText, Target, AlertTriangle, Cpu, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 const Dashboard = () => {
   const entityStats = {
-    documents: 12,
-    useCases: 8,
-    riskIndicators: 15,
-    controls: 23
+    documents: 3,
+    useCases: 3,
+    riskIndicators: 5,
+    features: 5
   };
 
   const entities = [
@@ -39,11 +39,11 @@ const Dashboard = () => {
       color: 'bg-amber-500'
     },
     {
-      name: 'Controls',
-      description: 'Manage features and rules for compliance',
-      icon: Shield,
-      count: entityStats.controls,
-      path: '/controls',
+      name: 'Features',
+      description: 'Manage AI models, rules and calculations',
+      icon: Cpu,
+      count: entityStats.features,
+      path: '/features',
       color: 'bg-purple-500'
     }
   ];
@@ -73,7 +73,7 @@ const Dashboard = () => {
           <h2 className="text-2xl font-semibold text-gray-900 mb-4">Dashboard Overview</h2>
           <p className="text-gray-600 max-w-3xl">
             Welcome to the Compliance Linker Tool. Manage your regulatory documents, use cases, risk indicators, 
-            and controls while maintaining complex many-to-many relationships between entities.
+            and features while maintaining complex many-to-many relationships between entities.
           </p>
         </div>
 
@@ -128,10 +128,10 @@ const Dashboard = () => {
                 New Risk Indicator
               </Button>
             </Link>
-            <Link to="/controls/new">
+            <Link to="/features/new">
               <Button variant="outline" className="w-full justify-start">
-                <Shield className="mr-2 h-4 w-4" />
-                New Control
+                <Cpu className="mr-2 h-4 w-4" />
+                New Feature
               </Button>
             </Link>
           </div>
@@ -144,21 +144,21 @@ const Dashboard = () => {
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-gray-900">New regulatory document added: "FATF Guidance on Digital Assets"</span>
+                <span className="text-gray-900">New regulatory document added: "Guidance on Virtual Assets"</span>
               </div>
               <span className="text-sm text-gray-500">2 hours ago</span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-gray-900">Use case "Cross-Border Payments" linked to 3 risk indicators</span>
+                <span className="text-gray-900">Use case "Cross-Border Payments" linked to 2 risk indicators</span>
               </div>
               <span className="text-sm text-gray-500">4 hours ago</span>
             </div>
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                <span className="text-gray-900">Control "High-Risk Jurisdiction Alert" updated</span>
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-gray-900">Feature "Structuring Detection Model" updated</span>
               </div>
               <span className="text-sm text-gray-500">1 day ago</span>
             </div>
