@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Cpu, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { dataStore } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
+import Breadcrumb from '@/components/Breadcrumb';
+import RelationshipSection from '@/components/RelationshipSection';
 
 const FeaturesList = () => {
   const features = dataStore.getFeatures();
@@ -19,6 +22,11 @@ const FeaturesList = () => {
       dataStore.deleteFeature(id);
       navigate('/features', { replace: true });
     }
+  };
+
+  const handleViewDetails = (id: number) => {
+    console.log('Navigating to feature:', id);
+    navigate(`/features/${id}`);
   };
 
   const getTypeColor = (type: string) => {
@@ -81,13 +89,15 @@ const FeaturesList = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{feature.description}</p>
-                <Link to={`/features/${feature.id}`}>
-                  <Button variant="outline" className="w-full">
-                    View Details
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{feature.description}</div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(feature.id)}
+                >
+                  View Details
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -325,21 +335,14 @@ const FeatureForm = ({ isEdit = false }: { isEdit?: boolean }) => {
 };
 
 const Features = () => {
-  const { id, action } = useParams<{ id?: string; action?: string }>();
-  
-  if (action === 'edit') {
-    return <FeatureForm isEdit={true} />;
-  }
-  
-  if (id === 'new') {
-    return <FeatureForm />;
-  }
-  
-  if (id) {
-    return <FeatureDetail />;
-  }
-  
-  return <FeaturesList />;
+  return (
+    <Routes>
+      <Route path="/" element={<FeaturesList />} />
+      <Route path="/new" element={<FeatureForm />} />
+      <Route path="/:id" element={<FeatureDetail />} />
+      <Route path="/:id/edit" element={<FeatureForm isEdit={true} />} />
+    </Routes>
+  );
 };
 
 export default Features;

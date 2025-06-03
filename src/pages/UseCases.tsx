@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Target, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,11 @@ const UseCasesList = () => {
       dataStore.deleteUseCase(id);
       navigate('/use-cases', { replace: true });
     }
+  };
+
+  const handleViewDetails = (id: number) => {
+    console.log('Navigating to use case:', id);
+    navigate(`/use-cases/${id}`);
   };
 
   return (
@@ -64,13 +69,15 @@ const UseCasesList = () => {
                 <CardTitle className="text-lg">{useCase.name}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{useCase.description}</p>
-                <Link to={`/use-cases/${useCase.id}`}>
-                  <Button variant="outline" className="w-full">
-                    View Details
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{useCase.description}</div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(useCase.id)}
+                >
+                  View Details
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -283,21 +290,14 @@ const UseCaseForm = ({ isEdit = false }: { isEdit?: boolean }) => {
 };
 
 const UseCases = () => {
-  const { id, action } = useParams<{ id?: string; action?: string }>();
-  
-  if (action === 'edit') {
-    return <UseCaseForm isEdit={true} />;
-  }
-  
-  if (id === 'new') {
-    return <UseCaseForm />;
-  }
-  
-  if (id) {
-    return <UseCaseDetail />;
-  }
-  
-  return <UseCasesList />;
+  return (
+    <Routes>
+      <Route path="/" element={<UseCasesList />} />
+      <Route path="/new" element={<UseCaseForm />} />
+      <Route path="/:id" element={<UseCaseDetail />} />
+      <Route path="/:id/edit" element={<UseCaseForm isEdit={true} />} />
+    </Routes>
+  );
 };
 
 export default UseCases;

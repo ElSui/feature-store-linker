@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { AlertTriangle, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -323,23 +323,14 @@ const RiskIndicatorForm = ({ isEdit = false }: { isEdit?: boolean }) => {
 };
 
 const RiskIndicators = () => {
-  const { id, action } = useParams<{ id?: string; action?: string }>();
-  
-  console.log('RiskIndicators router - ID:', id, 'Action:', action);
-  
-  if (action === 'edit') {
-    return <RiskIndicatorForm isEdit={true} />;
-  }
-  
-  if (id === 'new') {
-    return <RiskIndicatorForm />;
-  }
-  
-  if (id) {
-    return <RiskIndicatorDetail />;
-  }
-  
-  return <RiskIndicatorsList />;
+  return (
+    <Routes>
+      <Route path="/" element={<RiskIndicatorsList />} />
+      <Route path="/new" element={<RiskIndicatorForm />} />
+      <Route path="/:id" element={<RiskIndicatorDetail />} />
+      <Route path="/:id/edit" element={<RiskIndicatorForm isEdit={true} />} />
+    </Routes>
+  );
 };
 
 export default RiskIndicators;

@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { FileText, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -315,23 +316,14 @@ const DocumentForm = ({ isEdit = false }: { isEdit?: boolean }) => {
 };
 
 const Documents = () => {
-  const { id, action } = useParams<{ id?: string; action?: string }>();
-  
-  console.log('Documents router - ID:', id, 'Action:', action);
-  
-  if (action === 'edit') {
-    return <DocumentForm isEdit={true} />;
-  }
-  
-  if (id === 'new') {
-    return <DocumentForm />;
-  }
-  
-  if (id) {
-    return <DocumentDetail />;
-  }
-  
-  return <DocumentsList />;
+  return (
+    <Routes>
+      <Route path="/" element={<DocumentsList />} />
+      <Route path="/new" element={<DocumentForm />} />
+      <Route path="/:id" element={<DocumentDetail />} />
+      <Route path="/:id/edit" element={<DocumentForm isEdit={true} />} />
+    </Routes>
+  );
 };
 
 export default Documents;
