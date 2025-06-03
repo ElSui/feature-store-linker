@@ -1,4 +1,3 @@
-
 import { dataStore, RegulatoryDocument, UseCase, RiskIndicator, Feature } from './dataStore';
 
 export interface GraphNode {
@@ -18,6 +17,11 @@ export interface GraphEdge {
   target: string;
   type: 'default';
   animated?: boolean;
+  style?: {
+    opacity?: number;
+    strokeWidth?: number;
+    [key: string]: any;
+  };
 }
 
 export class GraphDataTransformer {
