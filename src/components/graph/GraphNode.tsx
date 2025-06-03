@@ -12,6 +12,12 @@ interface GraphNodeProps {
     onHighlight?: (nodeId: string) => void;
     isHighlighted?: boolean;
     isDimmed?: boolean;
+    dynamicHandles?: Array<{
+      id: string;
+      type: 'source' | 'target';
+      position: Position;
+      style?: React.CSSProperties;
+    }>;
   };
   type: 'document' | 'usecase' | 'risk' | 'feature';
   id: string;
@@ -74,10 +80,29 @@ const GraphNode = memo(({ data, type, id }: GraphNodeProps) => {
 
   return (
     <div className={getNodeStyle()}>
-      <Handle type="target" position={Position.Top} className="w-2 h-2" />
-      <Handle type="source" position={Position.Bottom} className="w-2 h-2" />
-      <Handle type="target" position={Position.Left} className="w-2 h-2" />
-      <Handle type="source" position={Position.Right} className="w-2 h-2" />
+      {/* Render dynamic handles if available, otherwise use default handles */}
+      {data.dynamicHandles ? (
+        data.dynamicHandles.map((handle) => (
+          <Handle
+            key={handle.id}
+            id={handle.id}
+            type={handle.type}
+            position={handle.position}
+            className="w-2 h-2"
+            style={{
+              ...handle.style,
+              transform: 'translate(-50%, -50%)',
+            }}
+          />
+        ))
+      ) : (
+        <>
+          <Handle type="target" position={Position.Top} className="w-2 h-2" />
+          <Handle type="source" position={Position.Bottom} className="w-2 h-2" />
+          <Handle type="target" position={Position.Left} className="w-2 h-2" />
+          <Handle type="source" position={Position.Right} className="w-2 h-2" />
+        </>
+      )}
       
       {/* Highlight button */}
       <button

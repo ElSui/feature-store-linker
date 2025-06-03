@@ -1,4 +1,6 @@
 import { dataStore, RegulatoryDocument, UseCase, RiskIndicator, Feature } from './dataStore';
+import { Position } from '@xyflow/react';
+import { calculateOptimalHandlePosition } from '../utils/handleUtils';
 
 export interface GraphNode {
   id: string;
@@ -8,6 +10,12 @@ export interface GraphNode {
     label: string;
     entity: RegulatoryDocument | UseCase | RiskIndicator | Feature;
     entityType: string;
+    dynamicHandles?: Array<{
+      id: string;
+      type: 'source' | 'target';
+      position: Position;
+      style?: React.CSSProperties;
+    }>;
   };
 }
 
@@ -15,6 +23,8 @@ export interface GraphEdge {
   id: string;
   source: string;
   target: string;
+  sourceHandle?: string;
+  targetHandle?: string;
   type: 'default';
   animated?: boolean;
   style?: {
@@ -49,6 +59,86 @@ export class GraphDataTransformer {
       x: centerX + Math.cos(angle + angleOffset) * config.radius,
       y: centerY + Math.sin(angle + angleOffset) * config.radius
     };
+  }
+
+  private calculateDynamicHandles(nodes: GraphNode[], edges: GraphEdge[]) {
+    const nodePositions = new Map<string, { x: number; y: number }>();
+    nodes.forEach(node => {
+      nodePositions.set(node.id, node.position);
+    });
+
+    const nodeHandles = new Map<string, Array<{
+      id: string;
+      type: 'source' | 'target';
+      position: Position;
+      style?: React.CSSProperties;
+    }>>();
+
+    // Initialize handles array for each node
+    nodes.forEach(node => {
+      nodeHandles.set(node.id, []);
+    });
+
+    // Calculate handles for each edge
+    edges.forEach(edge => {
+      const sourcePos = nodePositions.get(edge.source);
+      const targetPos = nodePositions.get(edge.target);
+      
+      if (sourcePos && targetPos) {
+        // Calculate source handle
+        const sourceHandle = calculateOptimalHandlePosition(sourcePos, targetPos, true);
+        const sourceHandleData = {
+          id: `${edge.id}-source`,
+          type: 'source' as const,
+          position: this.getReactFlowPosition(sourceHandle.position),
+          style: sourceHandle.style
+        };
+
+        // Calculate target handle
+        const targetHandle = calculateOptimalHandlePosition(targetPos, sourcePos, false);
+        const targetHandleData = {
+          id: `${edge.id}-target`,
+          type: 'target' as const,
+          position: this.getReactFlowPosition(targetHandle.position),
+          style: targetHandle.style
+        };
+
+        // Add handles to respective nodes
+        const sourceHandles = nodeHandles.get(edge.source) || [];
+        const targetHandles = nodeHandles.get(edge.target) || [];
+        
+        sourceHandles.push(sourceHandleData);
+        targetHandles.push(targetHandleData);
+        
+        nodeHandles.set(edge.source, sourceHandles);
+        nodeHandles.set(edge.target, targetHandles);
+
+        // Update edge with specific handle IDs
+        edge.sourceHandle = sourceHandleData.id;
+        edge.targetHandle = targetHandleData.id;
+      }
+    });
+
+    return nodeHandles;
+  }
+
+  private getReactFlowPosition(position: string): Position {
+    switch (position) {
+      case 'top':
+      case 'top-left':
+      case 'top-right':
+        return Position.Top;
+      case 'bottom':
+      case 'bottom-left':
+      case 'bottom-right':
+        return Position.Bottom;
+      case 'left':
+        return Position.Left;
+      case 'right':
+        return Position.Right;
+      default:
+        return Position.Top;
+    }
   }
 
   getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
@@ -154,6 +244,17 @@ export class GraphDataTransformer {
           type: 'default'
         });
       });
+    });
+
+    // Calculate dynamic handles
+    const nodeHandles = this.calculateDynamicHandles(nodes, edges);
+
+    // Add dynamic handles to node data
+    nodes.forEach(node => {
+      const handles = nodeHandles.get(node.id);
+      if (handles && handles.length > 0) {
+        node.data.dynamicHandles = handles;
+      }
     });
 
     return { nodes, edges };
