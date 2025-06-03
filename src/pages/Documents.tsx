@@ -24,6 +24,11 @@ const DocumentsList = () => {
     }
   };
 
+  const handleViewDetails = (id: number) => {
+    console.log('Navigating to document:', id);
+    navigate(`/documents/${id}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
@@ -72,14 +77,16 @@ const DocumentsList = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{document.summary}</p>
-                <p className="text-xs text-gray-500 mb-4">Published: {document.publication_date}</p>
-                <Link to={`/documents/${document.id}`}>
-                  <Button variant="outline" className="w-full">
-                    View Details
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{document.summary}</div>
+                <div className="text-xs text-gray-500 mb-4">Published: {document.publication_date}</div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(document.id)}
+                >
+                  View Details
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -96,6 +103,8 @@ const DocumentDetail = () => {
   const linkedUseCases = dataStore.getLinkedUseCasesForDocument(Number(id));
   const allUseCases = dataStore.getUseCases();
   const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
+
+  console.log('DocumentDetail - ID:', id, 'Document:', document);
 
   if (!document) {
     return (
@@ -307,6 +316,8 @@ const DocumentForm = ({ isEdit = false }: { isEdit?: boolean }) => {
 
 const Documents = () => {
   const { id, action } = useParams<{ id?: string; action?: string }>();
+  
+  console.log('Documents router - ID:', id, 'Action:', action);
   
   if (action === 'edit') {
     return <DocumentForm isEdit={true} />;

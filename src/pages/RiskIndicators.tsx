@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
@@ -22,6 +21,11 @@ const RiskIndicatorsList = () => {
       dataStore.deleteRiskIndicator(id);
       navigate('/risk-indicators', { replace: true });
     }
+  };
+
+  const handleViewDetails = (id: number) => {
+    console.log('Navigating to risk indicator:', id);
+    navigate(`/risk-indicators/${id}`);
   };
 
   return (
@@ -69,13 +73,15 @@ const RiskIndicatorsList = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{risk.description}</p>
-                <Link to={`/risk-indicators/${risk.id}`}>
-                  <Button variant="outline" className="w-full">
-                    View Details
-                    <ExternalLink className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
+                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{risk.description}</div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(risk.id)}
+                >
+                  View Details
+                  <ExternalLink className="w-4 h-4 ml-2" />
+                </Button>
               </CardContent>
             </Card>
           ))}
@@ -96,6 +102,8 @@ const RiskIndicatorDetail = () => {
   const allFeatures = dataStore.getFeatures();
   const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
   const unlinkedFeatures = allFeatures.filter(feature => !linkedFeatures.find(linked => linked.id === feature.id));
+
+  console.log('RiskIndicatorDetail - ID:', id, 'RiskIndicator:', riskIndicator);
 
   if (!riskIndicator) {
     return (
@@ -316,6 +324,8 @@ const RiskIndicatorForm = ({ isEdit = false }: { isEdit?: boolean }) => {
 
 const RiskIndicators = () => {
   const { id, action } = useParams<{ id?: string; action?: string }>();
+  
+  console.log('RiskIndicators router - ID:', id, 'Action:', action);
   
   if (action === 'edit') {
     return <RiskIndicatorForm isEdit={true} />;
