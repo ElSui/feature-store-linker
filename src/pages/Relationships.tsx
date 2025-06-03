@@ -74,7 +74,8 @@ const Relationships = () => {
     setSelectedNodeId(node.id);
     
     // Navigate to the entity's detail page
-    const entityId = node.data.entity.id;
+    const entity = node.data.entity as { id: string };
+    const entityId = entity.id;
     const type = node.type;
     
     switch (type) {
