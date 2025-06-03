@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, FileText, Target, AlertTriangle, Cpu } from 'lucide-react';
+import { Home, FileText, Target, AlertTriangle, Cpu, Network } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Navigation = () => {
@@ -13,6 +13,7 @@ const Navigation = () => {
     { name: 'Use Cases', path: '/use-cases', icon: Target },
     { name: 'Risk Indicators', path: '/risk-indicators', icon: AlertTriangle },
     { name: 'Features', path: '/features', icon: Cpu },
+    { name: 'Relationships', path: '/relationships', icon: Network },
   ];
 
   return (

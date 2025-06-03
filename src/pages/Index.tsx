@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Target, AlertTriangle, Cpu, ArrowRight } from 'lucide-react';
+import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -59,6 +59,12 @@ const Dashboard = () => {
               <p className="text-gray-600 mt-2">Manage regulatory relationships and compliance entities</p>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/relationships">
+                <Button variant="outline">
+                  <Network className="mr-2 h-4 w-4" />
+                  View Graph
+                </Button>
+              </Link>
               <Button variant="outline">Settings</Button>
               <Button>Export Data</Button>
             </div>
@@ -75,6 +81,27 @@ const Dashboard = () => {
             Welcome to the Compliance Linker Tool. Manage your regulatory documents, use cases, risk indicators, 
             and features while maintaining complex many-to-many relationships between entities.
           </p>
+        </div>
+
+        {/* Graph View Highlight */}
+        <div className="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                <Network className="mr-2 h-5 w-5 text-purple-600" />
+                Relationship Graph
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Visualize the interconnected network of compliance entities and their relationships in an interactive graph.
+              </p>
+            </div>
+            <Link to="/relationships">
+              <Button className="bg-purple-600 hover:bg-purple-700">
+                Explore Graph
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Entity Cards Grid */}

@@ -9,6 +9,7 @@ import Documents from "./pages/Documents";
 import UseCases from "./pages/UseCases";
 import RiskIndicators from "./pages/RiskIndicators";
 import Features from "./pages/Features";
+import Relationships from "./pages/Relationships";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
           <Route path="/use-cases/*" element={<UseCases />} />
           <Route path="/risk-indicators/*" element={<RiskIndicators />} />
           <Route path="/features/*" element={<Features />} />
+          <Route path="/relationships" element={<Relationships />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
