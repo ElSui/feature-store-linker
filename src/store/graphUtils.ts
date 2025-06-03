@@ -26,24 +26,28 @@ export interface GraphEdge {
 
 export class GraphDataTransformer {
   private getNodePosition(index: number, total: number, entityType: string): { x: number; y: number } {
-    const radius = 300;
-    const centerX = 400;
+    const centerX = 600;
     const centerY = 400;
     
-    // Position different entity types in different areas
-    const typeOffsets = {
-      document: { x: -200, y: -200 },
-      usecase: { x: 200, y: -200 },
-      risk: { x: 200, y: 200 },
-      feature: { x: -200, y: 200 }
+    // Define hierarchical layers with different radii
+    const layerConfig = {
+      document: { radius: 100, layer: 1 }, // Inner circle - Documents
+      usecase: { radius: 250, layer: 2 },  // Second circle - Use Cases
+      risk: { radius: 400, layer: 3 },     // Third circle - Risk Indicators
+      feature: { radius: 550, layer: 4 }   // Outer circle - Features
     };
     
-    const offset = typeOffsets[entityType as keyof typeof typeOffsets] || { x: 0, y: 0 };
+    const config = layerConfig[entityType as keyof typeof layerConfig] || { radius: 300, layer: 1 };
+    
+    // Calculate angle for even distribution around the circle
     const angle = (index / total) * 2 * Math.PI;
     
+    // Add some offset to avoid perfect alignment
+    const angleOffset = (config.layer - 1) * 0.2; // Slight rotation per layer
+    
     return {
-      x: centerX + offset.x + Math.cos(angle) * radius,
-      y: centerY + offset.y + Math.sin(angle) * radius
+      x: centerX + Math.cos(angle + angleOffset) * config.radius,
+      y: centerY + Math.sin(angle + angleOffset) * config.radius
     };
   }
 
