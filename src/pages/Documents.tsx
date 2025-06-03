@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { dataStore, RegulatoryDocument } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
-import Breadcrumb from '@/components/ui/breadcrumb';
+import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
 
 const DocumentsList = () => {
@@ -134,24 +134,7 @@ const DocumentDetail = () => {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Breadcrumb.Root>
-          <Breadcrumb.List>
-            {breadcrumbItems.map((item, index) => (
-              <React.Fragment key={index}>
-                <Breadcrumb.Item>
-                  {item.href ? (
-                    <Breadcrumb.Link href={item.href}>{item.label}</Breadcrumb.Link>
-                  ) : (
-                    <Breadcrumb.Page>{item.label}</Breadcrumb.Page>
-                  )}
-                </Breadcrumb.Item>
-                {index < breadcrumbItems.length - 1 && (
-                  <Breadcrumb.Separator />
-                )}
-              </React.Fragment>
-            ))}
-          </Breadcrumb.List>
-        </Breadcrumb.Root>
+        <Breadcrumb items={breadcrumbItems} />
         
         <div className="mb-6">
           <div className="flex justify-between items-start">

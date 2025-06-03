@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { AlertTriangle, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { dataStore } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
-import Breadcrumb from '@/components/ui/breadcrumb';
+import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
 
 const RiskIndicatorsList = () => {
