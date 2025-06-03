@@ -46,6 +46,12 @@ const Relationships = () => {
   const stats = useMemo(() => graphTransformer.getConnectionStats(), []);
   const networkAnalyzer = useMemo(() => new NetworkAnalyzer(graphData.nodes, graphData.edges), [graphData]);
 
+  // Move handleNodeHighlight before it's used in processedNodes
+  const handleNodeHighlight = useCallback((nodeId: string) => {
+    setHighlightedNetwork(new Set([nodeId]));
+    setSearchTerm(''); // Clear search when highlighting manually
+  }, []);
+
   // Calculate network neighborhood based on search or highlighted nodes
   const networkNeighborhood = useMemo(() => {
     if (searchTerm) {
@@ -82,7 +88,7 @@ const Relationships = () => {
         isDimmed: networkNeighborhood ? networkNeighborhood.connectedNodes.has(node.id) : false
       }
     }));
-  }, [graphData.nodes, visibleTypes, networkNeighborhood]);
+  }, [graphData.nodes, visibleTypes, networkNeighborhood, handleNodeHighlight]);
 
   // Filter edges to show only relevant connections
   const processedEdges = useMemo(() => {
@@ -134,11 +140,6 @@ const Relationships = () => {
         break;
     }
   }, [navigate]);
-
-  const handleNodeHighlight = useCallback((nodeId: string) => {
-    setHighlightedNetwork(new Set([nodeId]));
-    setSearchTerm(''); // Clear search when highlighting manually
-  }, []);
 
   const handleTypeToggle = (type: keyof typeof visibleTypes) => {
     setVisibleTypes(prev => ({
@@ -279,7 +280,7 @@ const Relationships = () => {
             
             <Panel position="top-right" className="bg-white p-2 rounded shadow">
               <div className="text-xs text-gray-600">
-                Click nodes to navigate • Click <Focus className="inline w-3 h-3" /> to highlight network
+                Click nodes to navigate • Click highlight button to show network
               </div>
             </Panel>
           </ReactFlow>
