@@ -107,9 +107,6 @@ const FeaturesList = () => {
   );
 };
 
-import Breadcrumb from '@/components/Breadcrumb';
-import RelationshipSection from '@/components/RelationshipSection';
-
 const FeatureDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
