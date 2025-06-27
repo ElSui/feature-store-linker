@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
+import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -253,17 +254,163 @@ const UseCasesList = () => {
 const UseCaseDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [useCase, setUseCase] = useState<UseCase | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Mock data for linked entities (replace with actual data fetching)
+  const [linkedDocuments, setLinkedDocuments] = useState<any[]>([]);
+  const [linkedRiskIndicators, setLinkedRiskIndicators] = useState<any[]>([]);
+  const [availableDocuments, setAvailableDocuments] = useState<any[]>([]);
+  const [availableRiskIndicators, setAvailableRiskIndicators] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchUseCase = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('use_cases')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) {
+        setError(error.message);
+        console.error('Error fetching use case:', error);
+      } else if (data) {
+        setUseCase(data as UseCase);
+      } else {
+        setError('Use case not found');
+      }
+      setLoading(false);
+    };
+
+    fetchUseCase();
+  }, [id]);
+
+  const handleLinkDocuments = (documentIds: number[]) => {
+    console.log('Linking documents:', documentIds);
+    // TODO: Implement actual linking logic
+  };
+
+  const handleUnlinkDocument = (documentId: number) => {
+    console.log('Unlinking document:', documentId);
+    // TODO: Implement actual unlinking logic
+  };
+
+  const handleLinkRiskIndicators = (riskIds: number[]) => {
+    console.log('Linking risk indicators:', riskIds);
+    // TODO: Implement actual linking logic
+  };
+
+  const handleUnlinkRiskIndicator = (riskId: number) => {
+    console.log('Unlinking risk indicator:', riskId);
+    // TODO: Implement actual unlinking logic
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Use Case...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !useCase) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+          <p className="ml-4 text-lg text-red-600">Error: {error || 'Use case not found'}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Use Case Detail (Coming Soon)</h1>
-          <p className="text-gray-600 mt-2">Use Case ID: {id}</p>
-          <Link to="/use-cases">
-            <Button className="mt-4">Back to Use Cases</Button>
+        {/* Page Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{useCase.name}</h1>
+            
+            {/* Key Attributes */}
+            {useCase.business_area && (
+              <Card className="mb-6">
+                <CardContent className="pt-4">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div>
+                      <span className="text-xs text-muted-foreground mr-2">Business Area:</span>
+                      <Badge className={getCategoryColor(useCase.business_area)}>{useCase.business_area}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+          
+          <Link to={`/use-cases/${id}/edit`}>
+            <Button>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
           </Link>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Details */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardContent className="pt-6">
+                {/* Description Section */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-lg font-semibold">Description</h3>
+                  </div>
+                  <div className="text-gray-700 leading-relaxed">
+                    {useCase.description || (
+                      <span className="text-muted-foreground italic">No description available</span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Relationship Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <RelationshipSection
+                title="Documents"
+                description="Regulatory documents associated with this use case"
+                linkedEntities={linkedDocuments}
+                availableEntities={availableDocuments}
+                entityType="documents"
+                onLink={handleLinkDocuments}
+                onUnlink={handleUnlinkDocument}
+              />
+              
+              <RelationshipSection
+                title="Risk Indicators"
+                description="Risk indicators identified for this use case"
+                linkedEntities={linkedRiskIndicators}
+                availableEntities={availableRiskIndicators}
+                entityType="risk-indicators"
+                onLink={handleLinkRiskIndicators}
+                onUnlink={handleUnlinkRiskIndicator}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

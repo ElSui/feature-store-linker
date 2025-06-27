@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
+import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -276,18 +277,167 @@ const DocumentsList = () => {
 const DocumentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
-  // For now, show placeholder until we implement detail fetching
+  const [document, setDocument] = useState<RegulatoryDocument | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Mock data for linked entities (replace with actual data fetching)
+  const [linkedUseCases, setLinkedUseCases] = useState<any[]>([]);
+  const [availableUseCases, setAvailableUseCases] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDocument = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('regulatory_documents')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (error) {
+        setError(error.message);
+        console.error('Error fetching document:', error);
+      } else if (data) {
+        setDocument(data as RegulatoryDocument);
+      } else {
+        setError('Document not found');
+      }
+      setLoading(false);
+    };
+
+    fetchDocument();
+  }, [id]);
+
+  const handleLinkUseCases = (useCaseIds: number[]) => {
+    console.log('Linking use cases:', useCaseIds);
+    // TODO: Implement actual linking logic
+  };
+
+  const handleUnlinkUseCase = (useCaseId: number) => {
+    console.log('Unlinking use case:', useCaseId);
+    // TODO: Implement actual unlinking logic
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Document...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !document) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+          <p className="ml-4 text-lg text-red-600">Error: {error || 'Document not found'}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Document Detail (Coming Soon)</h1>
-          <p className="text-gray-600 mt-2">Document ID: {id}</p>
-          <Link to="/documents">
-            <Button className="mt-4">Back to Documents</Button>
+        {/* Page Header */}
+        <div className="flex justify-between items-start mb-6">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{document.name}</h1>
+            
+            {/* Key Attributes */}
+            <Card className="mb-6">
+              <CardContent className="pt-4">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {document.publisher && (
+                    <div>
+                      <span className="text-xs text-muted-foreground mr-2">Publisher:</span>
+                      <Badge className={getCategoryColor(document.publisher)}>{document.publisher}</Badge>
+                    </div>
+                  )}
+                  {document.region && (
+                    <div>
+                      <span className="text-xs text-muted-foreground mr-2">Region:</span>
+                      <Badge variant="outline">{document.region}</Badge>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <Link to={`/documents/${id}/edit`}>
+            <Button>
+              <Edit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
           </Link>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Details */}
+          <div className="lg:col-span-2">
+            <Card>
+              <CardContent className="pt-6">
+                {/* Publication Date Section */}
+                {document.publication_date && (
+                  <>
+                    <div>
+                      <div className="flex items-center gap-2 mb-4">
+                        <Calendar className="w-5 h-5 text-blue-500" />
+                        <h3 className="text-lg font-semibold">Publication Date</h3>
+                      </div>
+                      <div className="text-gray-700 leading-relaxed mb-6">
+                        {new Date(document.publication_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+                    <Separator className="my-6" />
+                  </>
+                )}
+                
+                {/* Summary Section */}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                    <h3 className="text-lg font-semibold">Summary</h3>
+                  </div>
+                  <div className="text-gray-700 leading-relaxed">
+                    <span className="text-muted-foreground italic">
+                      Document summary will be available here once content analysis is implemented.
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Relationship Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <RelationshipSection
+                title="Use Cases"
+                description="Business use cases that reference this document"
+                linkedEntities={linkedUseCases}
+                availableEntities={availableUseCases}
+                entityType="use-cases"
+                onLink={handleLinkUseCases}
+                onUnlink={handleUnlinkUseCase}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>
