@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { Cpu, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
+import { Cpu, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
@@ -27,10 +29,95 @@ export type Feature = {
   lookback_period: string;
 };
 
+const FeaturesTable = ({ features, onDelete, onViewDetails }: { 
+  features: Feature[]; 
+  onDelete: (id: string) => void;
+  onViewDetails: (id: string) => void;
+}) => {
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'AI Model Feature':
+      case 'Value':
+        return 'bg-blue-500 text-white';
+      case 'Simple Rule':
+      case 'Rule':
+        return 'bg-green-500 text-white';
+      case 'Calculation':
+      case 'Ratio':
+        return 'bg-orange-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Context</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {features.map((feature) => (
+            <TableRow key={feature.id}>
+              <TableCell className="font-mono text-sm">
+                <Badge variant="outline">{feature.unique_feature_id}</Badge>
+              </TableCell>
+              <TableCell className="font-medium">{feature.name}</TableCell>
+              <TableCell>{feature.category || 'Uncategorized'}</TableCell>
+              <TableCell>
+                <Badge className={getTypeColor(feature.type)}>{feature.type}</Badge>
+              </TableCell>
+              <TableCell>
+                <div className="flex gap-1">
+                  {feature.is_pc && <Badge variant="secondary">PC</Badge>}
+                  {feature.is_rb && <Badge variant="secondary">RB</Badge>}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onViewDetails(feature.id)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                  <Link to={`/features/${feature.id}/edit`}>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDelete(feature.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
+
 const FeaturesList = () => {
   const [features, setFeatures] = useState<Feature[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('list');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -117,52 +204,79 @@ const FeaturesList = () => {
             </Button>
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature) => (
-            <Card key={feature.id} className="hover:shadow-lg transition-shadow flex flex-col">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Cpu className="w-8 h-8 text-purple-500" />
-                  <div className="flex space-x-2">
-                    <Link to={`/features/${feature.id}/edit`}>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(feature.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <CardTitle className="text-lg pt-2">{feature.name}</CardTitle>
-                <CardDescription>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <Badge variant="outline">{feature.unique_feature_id}</Badge>
-                    <Badge className={getTypeColor(feature.type)}>{feature.type}</Badge>
-                    {feature.is_pc && <Badge variant="secondary">PC</Badge>}
-                    {feature.is_rb && <Badge variant="secondary">RB</Badge>}
-                  </div>
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow flex flex-col justify-between">
-                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{feature.description}</div>
-                <Button
-                  variant="outline"
-                  className="w-full mt-auto"
-                  onClick={() => handleViewDetails(feature.id)}
-                >
-                  View Details
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+
+        <div className="mb-6">
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(value) => value && setViewMode(value as 'card' | 'list')}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="card" aria-label="Card view">
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              Card
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="w-4 h-4 mr-2" />
+              List
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+
+        {viewMode === 'card' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature) => (
+              <Card key={feature.id} className="hover:shadow-lg transition-shadow flex flex-col">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <Cpu className="w-8 h-8 text-purple-500" />
+                    <div className="flex space-x-2">
+                      <Link to={`/features/${feature.id}/edit`}>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(feature.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg pt-2">{feature.name}</CardTitle>
+                  <CardDescription>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Badge variant="outline">{feature.unique_feature_id}</Badge>
+                      <Badge className={getTypeColor(feature.type)}>{feature.type}</Badge>
+                      {feature.is_pc && <Badge variant="secondary">PC</Badge>}
+                      {feature.is_rb && <Badge variant="secondary">RB</Badge>}
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex flex-col justify-between">
+                  <div className="text-gray-600 text-sm mb-4 line-clamp-3">{feature.description}</div>
+                  <Button
+                    variant="outline"
+                    className="w-full mt-auto"
+                    onClick={() => handleViewDetails(feature.id)}
+                  >
+                    View Details
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <FeaturesTable 
+            features={features}
+            onDelete={handleDelete}
+            onViewDetails={handleViewDetails}
+          />
+        )}
       </div>
     </div>
   );
