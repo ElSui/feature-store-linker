@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
+import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -20,10 +22,69 @@ export type UseCase = {
   created_at: string;
 };
 
+const UseCasesTable = ({ useCases, handleViewDetails, handleDelete }: {
+  useCases: UseCase[];
+  handleViewDetails: (id: string) => void;
+  handleDelete: (id: string) => void;
+}) => {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Business Area</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {useCases.map((useCase) => (
+          <TableRow key={useCase.id}>
+            <TableCell className="font-medium">{useCase.name}</TableCell>
+            <TableCell>
+              {useCase.business_area || <span className="text-gray-400">-</span>}
+            </TableCell>
+            <TableCell>
+              <div className="line-clamp-2 max-w-md">
+                {useCase.description || <span className="text-gray-400">No description</span>}
+              </div>
+            </TableCell>
+            <TableCell>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleViewDetails(useCase.id)}
+                >
+                  View
+                </Button>
+                <Link to={`/use-cases/${useCase.id}/edit`}>
+                  <Button variant="ghost" size="sm">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleDelete(useCase.id)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
+
 const UseCasesList = () => {
   const [useCases, setUseCases] = useState<UseCase[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('list');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,46 +159,70 @@ const UseCasesList = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {useCases.map((useCase) => (
-            <Card key={useCase.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Target className="w-8 h-8 text-emerald-500" />
-                  <div className="flex space-x-2">
-                    <Link to={`/use-cases/${useCase.id}/edit`}>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(useCase.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <CardTitle className="text-lg">{useCase.name}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-gray-600 text-sm mb-4 line-clamp-3">
-                  {useCase.description || 'No description available'}
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => handleViewDetails(useCase.id)}
-                >
-                  View Details
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mb-6">
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(value) => value && setViewMode(value as 'card' | 'list')}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="card" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+
+        {viewMode === 'card' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {useCases.map((useCase) => (
+              <Card key={useCase.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <Target className="w-8 h-8 text-emerald-500" />
+                    <div className="flex space-x-2">
+                      <Link to={`/use-cases/${useCase.id}/edit`}>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(useCase.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg">{useCase.name}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {useCase.description || 'No description available'}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleViewDetails(useCase.id)}
+                  >
+                    View Details
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <UseCasesTable 
+            useCases={useCases}
+            handleViewDetails={handleViewDetails}
+            handleDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   );

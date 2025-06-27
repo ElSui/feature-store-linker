@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { AlertTriangle, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -24,10 +26,75 @@ export type RiskIndicator = {
   created_at: string;
 };
 
+const RiskIndicatorsTable = ({ riskIndicators, handleViewDetails, handleDelete }: {
+  riskIndicators: RiskIndicator[];
+  handleViewDetails: (id: string) => void;
+  handleDelete: (id: string) => void;
+}) => {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>ID</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Category</TableHead>
+          <TableHead>AML Typology</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {riskIndicators.map((risk) => (
+          <TableRow key={risk.id}>
+            <TableCell>
+              <Badge variant="outline">{risk.unique_risk_id}</Badge>
+            </TableCell>
+            <TableCell className="font-medium">{risk.name}</TableCell>
+            <TableCell>
+              {risk.category ? (
+                <Badge variant="secondary">{risk.category}</Badge>
+              ) : (
+                <span className="text-gray-400">-</span>
+              )}
+            </TableCell>
+            <TableCell>
+              {risk.aml_typology || <span className="text-gray-400">-</span>}
+            </TableCell>
+            <TableCell>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleViewDetails(risk.id)}
+                >
+                  View
+                </Button>
+                <Link to={`/risk-indicators/${risk.id}/edit`}>
+                  <Button variant="ghost" size="sm">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleDelete(risk.id)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
+
 const RiskIndicatorsList = () => {
   const [riskIndicators, setRiskIndicators] = useState<RiskIndicator[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('list');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -102,52 +169,76 @@ const RiskIndicatorsList = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {riskIndicators.map((risk) => (
-            <Card key={risk.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <AlertTriangle className="w-8 h-8 text-amber-500" />
-                  <div className="flex space-x-2">
-                    <Link to={`/risk-indicators/${risk.id}/edit`}>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(risk.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <CardTitle className="text-lg">{risk.name}</CardTitle>
-                <CardDescription>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    <Badge variant="outline">{risk.unique_risk_id}</Badge>
-                    {risk.category && <Badge variant="secondary">{risk.category}</Badge>}
-                  </div>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-gray-600 text-sm mb-4 line-clamp-3">
-                  {risk.description || 'No description available'}
-                </div>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => handleViewDetails(risk.id)}
-                >
-                  View Details
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mb-6">
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(value) => value && setViewMode(value as 'card' | 'list')}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="card" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+
+        {viewMode === 'card' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {riskIndicators.map((risk) => (
+              <Card key={risk.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <AlertTriangle className="w-8 h-8 text-amber-500" />
+                    <div className="flex space-x-2">
+                      <Link to={`/risk-indicators/${risk.id}/edit`}>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(risk.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg">{risk.name}</CardTitle>
+                  <CardDescription>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <Badge variant="outline">{risk.unique_risk_id}</Badge>
+                      {risk.category && <Badge variant="secondary">{risk.category}</Badge>}
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {risk.description || 'No description available'}
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleViewDetails(risk.id)}
+                  >
+                    View Details
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <RiskIndicatorsTable 
+            riskIndicators={riskIndicators}
+            handleViewDetails={handleViewDetails}
+            handleDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   );

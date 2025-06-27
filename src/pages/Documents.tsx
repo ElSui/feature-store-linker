@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
+import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -23,10 +25,82 @@ export type RegulatoryDocument = {
   created_at: string;
 };
 
+const DocumentsTable = ({ documents, handleViewDetails, handleDelete }: {
+  documents: RegulatoryDocument[];
+  handleViewDetails: (id: string) => void;
+  handleDelete: (id: string) => void;
+}) => {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Publisher</TableHead>
+          <TableHead>Region</TableHead>
+          <TableHead>Publication Date</TableHead>
+          <TableHead>Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {documents.map((document) => (
+          <TableRow key={document.id}>
+            <TableCell className="font-medium">{document.name}</TableCell>
+            <TableCell>
+              {document.publisher ? (
+                <Badge variant="secondary">{document.publisher}</Badge>
+              ) : (
+                <span className="text-gray-400">-</span>
+              )}
+            </TableCell>
+            <TableCell>
+              {document.region ? (
+                <Badge variant="outline">{document.region}</Badge>
+              ) : (
+                <span className="text-gray-400">-</span>
+              )}
+            </TableCell>
+            <TableCell>
+              {document.publication_date 
+                ? new Date(document.publication_date).toLocaleDateString()
+                : <span className="text-gray-400">-</span>
+              }
+            </TableCell>
+            <TableCell>
+              <div className="flex space-x-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleViewDetails(document.id)}
+                >
+                  View
+                </Button>
+                <Link to={`/documents/${document.id}/edit`}>
+                  <Button variant="ghost" size="sm">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleDelete(document.id)}
+                  className="text-red-600 hover:text-red-800"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
+
 const DocumentsList = () => {
   const [documents, setDocuments] = useState<RegulatoryDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('list');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -101,54 +175,78 @@ const DocumentsList = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {documents.map((document) => (
-            <Card key={document.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <FileText className="w-8 h-8 text-blue-500" />
-                  <div className="flex space-x-2">
-                    <Link to={`/documents/${document.id}/edit`}>
-                      <Button variant="ghost" size="sm">
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleDelete(document.id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                <CardTitle className="text-lg">{document.name}</CardTitle>
-                <CardDescription>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {document.publisher && <Badge variant="secondary">{document.publisher}</Badge>}
-                    {document.region && <Badge variant="outline">{document.region}</Badge>}
-                  </div>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {document.publication_date && (
-                  <div className="text-xs text-gray-500 mb-4">
-                    Published: {new Date(document.publication_date).toLocaleDateString()}
-                  </div>
-                )}
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => handleViewDetails(document.id)}
-                >
-                  View Details
-                  <ExternalLink className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="mb-6">
+          <ToggleGroup 
+            type="single" 
+            value={viewMode} 
+            onValueChange={(value) => value && setViewMode(value as 'card' | 'list')}
+            className="justify-start"
+          >
+            <ToggleGroupItem value="card" aria-label="Card view">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List view">
+              <List className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
+
+        {viewMode === 'card' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {documents.map((document) => (
+              <Card key={document.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <FileText className="w-8 h-8 text-blue-500" />
+                    <div className="flex space-x-2">
+                      <Link to={`/documents/${document.id}/edit`}>
+                        <Button variant="ghost" size="sm">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      </Link>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDelete(document.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <CardTitle className="text-lg">{document.name}</CardTitle>
+                  <CardDescription>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {document.publisher && <Badge variant="secondary">{document.publisher}</Badge>}
+                      {document.region && <Badge variant="outline">{document.region}</Badge>}
+                    </div>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {document.publication_date && (
+                    <div className="text-xs text-gray-500 mb-4">
+                      Published: {new Date(document.publication_date).toLocaleDateString()}
+                    </div>
+                  )}
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleViewDetails(document.id)}
+                  >
+                    View Details
+                    <ExternalLink className="w-4 h-4 ml-2" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <DocumentsTable 
+            documents={documents}
+            handleViewDetails={handleViewDetails}
+            handleDelete={handleDelete}
+          />
+        )}
       </div>
     </div>
   );
