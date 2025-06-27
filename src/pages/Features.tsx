@@ -514,7 +514,7 @@ const FeatureDetail = () => {
             </Link>
           </div>
           
-          {/* New Badge Group */}
+          {/* Badge Group */}
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline">{feature.unique_feature_id}</Badge>
             {feature.category && (
@@ -528,39 +528,40 @@ const FeatureDetail = () => {
           </div>
         </div>
 
+        {/* Two-column grid layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Details Section - Two Column Grid */}
+          {/* Main Details Section */}
           <div className="lg:col-span-2">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
-                <p className="text-gray-600">{feature.description}</p>
-              </div>
-              
-              <div className="space-y-6">
+            <Card>
+              <CardContent className="p-6 space-y-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Logic Summary</h3>
-                  <p className="text-gray-600">{feature.logic_summary}</p>
+                  <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
+                  <p className="mt-1 text-base">{feature.description}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground">Logic Summary</h3>
+                  <p className="mt-1 text-base">{feature.logic_summary}</p>
                 </div>
                 
                 {feature.required_columns && feature.required_columns.length > 0 && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Columns</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h3 className="text-sm font-medium text-muted-foreground">Required Columns</h3>
+                    <div className="mt-2 flex flex-wrap gap-2">
                       {feature.required_columns.map((column, index) => (
                         <Badge key={index} variant="secondary">{column}</Badge>
                       ))}
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Relationship Section */}
-          <div>
+          <div className="lg:col-span-1">
             <RelationshipSection
-              title="Linked Risk Indicators"
+              title="Risk Indicators"
               description="Risk indicators associated with this feature"
               linkedEntities={linkedRiskIndicators}
               availableEntities={availableRiskIndicators}

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import MultiSelect from './MultiSelect';
 
 interface RelatedEntity {
@@ -54,29 +55,29 @@ const RelationshipSection: React.FC<RelationshipSectionProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-600 mt-1">{description}</p>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-lg">Linked {title}</CardTitle>
+            <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          </div>
+          {availableEntities.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLinkInterface(!showLinkInterface)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Link
+            </Button>
+          )}
         </div>
-        {availableEntities.length > 0 && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowLinkInterface(!showLinkInterface)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Link {title}
-          </Button>
-        )}
-      </div>
+      </CardHeader>
 
-      {/* Linked Entities List */}
-      <div className="space-y-0">
+      <CardContent className="space-y-0">
         {linkedEntities.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-muted-foreground">
             No {title.toLowerCase()} linked yet
           </div>
         ) : (
@@ -84,26 +85,28 @@ const RelationshipSection: React.FC<RelationshipSectionProps> = ({
             {linkedEntities.map((entity, index) => (
               <div 
                 key={entity.id} 
-                className={`flex items-center justify-between py-3 ${
-                  index !== linkedEntities.length - 1 ? 'border-b border-gray-200' : ''
+                className={`flex items-center justify-between p-3 hover:bg-muted/50 transition-colors ${
+                  index !== linkedEntities.length - 1 ? 'border-b border-border' : ''
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  {entity.unique_risk_id && (
-                    <Badge variant="outline">{entity.unique_risk_id}</Badge>
-                  )}
+                <div className="flex-1">
                   <Link 
                     to={getEntityLink(entity)} 
-                    className="font-medium text-blue-600 hover:text-blue-800"
+                    className="font-medium text-primary hover:underline block"
                   >
                     {entity.name}
                   </Link>
+                  {entity.unique_risk_id && (
+                    <Badge variant="outline" className="mt-1 text-xs">
+                      {entity.unique_risk_id}
+                    </Badge>
+                  )}
                 </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => onUnlink(entity.id)}
-                  className="text-red-600 hover:text-red-800"
+                  className="text-destructive hover:text-destructive/80 ml-2"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -128,8 +131,8 @@ const RelationshipSection: React.FC<RelationshipSectionProps> = ({
             />
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
