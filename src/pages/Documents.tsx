@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List, Calendar } from 'lucide-react';
@@ -281,33 +282,79 @@ const DocumentDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for linked entities (replace with actual data fetching)
+  // Linked entities state
   const [linkedUseCases, setLinkedUseCases] = useState<any[]>([]);
   const [availableUseCases, setAvailableUseCases] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDocument = async () => {
+    const fetchDocumentAndLinks = async () => {
       if (!id) return;
       
       setLoading(true);
-      const { data, error } = await supabase
-        .from('regulatory_documents')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      
+      try {
+        // Fetch the main document
+        const { data: documentData, error: documentError } = await supabase
+          .from('regulatory_documents')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
 
-      if (error) {
-        setError(error.message);
-        console.error('Error fetching document:', error);
-      } else if (data) {
-        setDocument(data as RegulatoryDocument);
-      } else {
-        setError('Document not found');
+        if (documentError) {
+          setError(documentError.message);
+          console.error('Error fetching document:', documentError);
+          return;
+        }
+
+        if (!documentData) {
+          setError('Document not found');
+          return;
+        }
+
+        setDocument(documentData as RegulatoryDocument);
+
+        // Fetch linked use cases
+        const { data: useCaseLinks, error: useCaseLinksError } = await supabase
+          .from('document_use_case_links')
+          .select('use_case_id')
+          .eq('document_id', id);
+
+        if (useCaseLinksError) {
+          console.error('Error fetching use case links:', useCaseLinksError);
+        } else if (useCaseLinks && useCaseLinks.length > 0) {
+          const useCaseIds = useCaseLinks.map(link => link.use_case_id);
+          const { data: useCasesData, error: useCasesError } = await supabase
+            .from('use_cases')
+            .select('*')
+            .in('id', useCaseIds);
+
+          if (useCasesError) {
+            console.error('Error fetching use cases:', useCasesError);
+          } else {
+            setLinkedUseCases(useCasesData || []);
+          }
+        }
+
+        // Fetch available use cases for linking
+        const { data: allUseCases, error: allUseCasesError } = await supabase
+          .from('use_cases')
+          .select('*');
+
+        if (!allUseCasesError && allUseCases) {
+          const linkedUseCaseIds = useCaseLinks?.map(link => link.use_case_id) || [];
+          const availableUseCasesData = allUseCases.filter(uc => !linkedUseCaseIds.includes(uc.id));
+          setAvailableUseCases(availableUseCasesData);
+        }
+
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchDocument();
+    fetchDocumentAndLinks();
   }, [id]);
 
   const handleLinkUseCases = (useCaseIds: number[]) => {

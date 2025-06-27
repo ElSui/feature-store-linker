@@ -269,35 +269,113 @@ const RiskIndicatorDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for linked entities (replace with actual data fetching)
+  // Linked entities state
   const [linkedUseCases, setLinkedUseCases] = useState<any[]>([]);
   const [linkedFeatures, setLinkedFeatures] = useState<any[]>([]);
   const [availableUseCases, setAvailableUseCases] = useState<any[]>([]);
   const [availableFeatures, setAvailableFeatures] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchRiskIndicator = async () => {
+    const fetchRiskIndicatorAndLinks = async () => {
       if (!id) return;
       
       setLoading(true);
-      const { data, error } = await supabase
-        .from('risk_indicators')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      
+      try {
+        // Fetch the main risk indicator
+        const { data: riskData, error: riskError } = await supabase
+          .from('risk_indicators')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
 
-      if (error) {
-        setError(error.message);
-        console.error('Error fetching risk indicator:', error);
-      } else if (data) {
-        setRiskIndicator(data as RiskIndicator);
-      } else {
-        setError('Risk indicator not found');
+        if (riskError) {
+          setError(riskError.message);
+          console.error('Error fetching risk indicator:', riskError);
+          return;
+        }
+
+        if (!riskData) {
+          setError('Risk indicator not found');
+          return;
+        }
+
+        setRiskIndicator(riskData as RiskIndicator);
+
+        // Fetch linked use cases
+        const { data: useCaseLinks, error: useCaseLinksError } = await supabase
+          .from('use_case_risk_links')
+          .select('use_case_id')
+          .eq('risk_indicator_id', id);
+
+        if (useCaseLinksError) {
+          console.error('Error fetching use case links:', useCaseLinksError);
+        } else if (useCaseLinks && useCaseLinks.length > 0) {
+          const useCaseIds = useCaseLinks.map(link => link.use_case_id);
+          const { data: useCasesData, error: useCasesError } = await supabase
+            .from('use_cases')
+            .select('*')
+            .in('id', useCaseIds);
+
+          if (useCasesError) {
+            console.error('Error fetching use cases:', useCasesError);
+          } else {
+            setLinkedUseCases(useCasesData || []);
+          }
+        }
+
+        // Fetch linked features
+        const { data: featureLinks, error: featureLinksError } = await supabase
+          .from('risk_feature_links')
+          .select('feature_id')
+          .eq('risk_indicator_id', id);
+
+        if (featureLinksError) {
+          console.error('Error fetching feature links:', featureLinksError);
+        } else if (featureLinks && featureLinks.length > 0) {
+          const featureIds = featureLinks.map(link => link.feature_id);
+          const { data: featuresData, error: featuresError } = await supabase
+            .from('features')
+            .select('*')
+            .in('id', featureIds);
+
+          if (featuresError) {
+            console.error('Error fetching features:', featuresError);
+          } else {
+            setLinkedFeatures(featuresData || []);
+          }
+        }
+
+        // Fetch available entities for linking (optional - for future functionality)
+        const { data: allUseCases, error: allUseCasesError } = await supabase
+          .from('use_cases')
+          .select('*');
+
+        if (!allUseCasesError && allUseCases) {
+          const linkedUseCaseIds = useCaseLinks?.map(link => link.use_case_id) || [];
+          const availableUseCasesData = allUseCases.filter(uc => !linkedUseCaseIds.includes(uc.id));
+          setAvailableUseCases(availableUseCasesData);
+        }
+
+        const { data: allFeatures, error: allFeaturesError } = await supabase
+          .from('features')
+          .select('*');
+
+        if (!allFeaturesError && allFeatures) {
+          const linkedFeatureIds = featureLinks?.map(link => link.feature_id) || [];
+          const availableFeaturesData = allFeatures.filter(f => !linkedFeatureIds.includes(f.id));
+          setAvailableFeatures(availableFeaturesData);
+        }
+
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchRiskIndicator();
+    fetchRiskIndicatorAndLinks();
   }, [id]);
 
   const handleLinkUseCases = (useCaseIds: number[]) => {

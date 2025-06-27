@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List, FileText } from 'lucide-react';
@@ -258,35 +259,113 @@ const UseCaseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Mock data for linked entities (replace with actual data fetching)
+  // Linked entities state
   const [linkedDocuments, setLinkedDocuments] = useState<any[]>([]);
   const [linkedRiskIndicators, setLinkedRiskIndicators] = useState<any[]>([]);
   const [availableDocuments, setAvailableDocuments] = useState<any[]>([]);
   const [availableRiskIndicators, setAvailableRiskIndicators] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchUseCase = async () => {
+    const fetchUseCaseAndLinks = async () => {
       if (!id) return;
       
       setLoading(true);
-      const { data, error } = await supabase
-        .from('use_cases')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      
+      try {
+        // Fetch the main use case
+        const { data: useCaseData, error: useCaseError } = await supabase
+          .from('use_cases')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
 
-      if (error) {
-        setError(error.message);
-        console.error('Error fetching use case:', error);
-      } else if (data) {
-        setUseCase(data as UseCase);
-      } else {
-        setError('Use case not found');
+        if (useCaseError) {
+          setError(useCaseError.message);
+          console.error('Error fetching use case:', useCaseError);
+          return;
+        }
+
+        if (!useCaseData) {
+          setError('Use case not found');
+          return;
+        }
+
+        setUseCase(useCaseData as UseCase);
+
+        // Fetch linked documents
+        const { data: documentLinks, error: documentLinksError } = await supabase
+          .from('document_use_case_links')
+          .select('document_id')
+          .eq('use_case_id', id);
+
+        if (documentLinksError) {
+          console.error('Error fetching document links:', documentLinksError);
+        } else if (documentLinks && documentLinks.length > 0) {
+          const documentIds = documentLinks.map(link => link.document_id);
+          const { data: documentsData, error: documentsError } = await supabase
+            .from('regulatory_documents')
+            .select('*')
+            .in('id', documentIds);
+
+          if (documentsError) {
+            console.error('Error fetching documents:', documentsError);
+          } else {
+            setLinkedDocuments(documentsData || []);
+          }
+        }
+
+        // Fetch linked risk indicators
+        const { data: riskLinks, error: riskLinksError } = await supabase
+          .from('use_case_risk_links')
+          .select('risk_indicator_id')
+          .eq('use_case_id', id);
+
+        if (riskLinksError) {
+          console.error('Error fetching risk links:', riskLinksError);
+        } else if (riskLinks && riskLinks.length > 0) {
+          const riskIds = riskLinks.map(link => link.risk_indicator_id);
+          const { data: risksData, error: risksError } = await supabase
+            .from('risk_indicators')
+            .select('*')
+            .in('id', riskIds);
+
+          if (risksError) {
+            console.error('Error fetching risk indicators:', risksError);
+          } else {
+            setLinkedRiskIndicators(risksData || []);
+          }
+        }
+
+        // Fetch available entities for linking
+        const { data: allDocuments, error: allDocumentsError } = await supabase
+          .from('regulatory_documents')
+          .select('*');
+
+        if (!allDocumentsError && allDocuments) {
+          const linkedDocumentIds = documentLinks?.map(link => link.document_id) || [];
+          const availableDocumentsData = allDocuments.filter(doc => !linkedDocumentIds.includes(doc.id));
+          setAvailableDocuments(availableDocumentsData);
+        }
+
+        const { data: allRisks, error: allRisksError } = await supabase
+          .from('risk_indicators')
+          .select('*');
+
+        if (!allRisksError && allRisks) {
+          const linkedRiskIds = riskLinks?.map(link => link.risk_indicator_id) || [];
+          const availableRisksData = allRisks.filter(risk => !linkedRiskIds.includes(risk.id));
+          setAvailableRiskIndicators(availableRisksData);
+        }
+
+      } catch (error) {
+        console.error('Unexpected error:', error);
+        setError('An unexpected error occurred');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
-    fetchUseCase();
+    fetchUseCaseAndLinks();
   }, [id]);
 
   const handleLinkDocuments = (documentIds: number[]) => {
