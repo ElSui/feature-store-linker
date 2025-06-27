@@ -41,31 +41,49 @@ export type Database = {
       }
       features: {
         Row: {
+          activity_type: string | null
+          category: Database["public"]["Enums"]["feature_category"] | null
           created_at: string
           description: string | null
           id: string
+          is_pc: boolean | null
+          is_rb: boolean | null
           logic_summary: string | null
+          lookback_period: Database["public"]["Enums"]["feature_period"] | null
           name: string
           required_columns: Json | null
-          type: string | null
+          type: Database["public"]["Enums"]["feature_value_type"] | null
+          unique_feature_id: string | null
         }
         Insert: {
+          activity_type?: string | null
+          category?: Database["public"]["Enums"]["feature_category"] | null
           created_at?: string
           description?: string | null
           id?: string
+          is_pc?: boolean | null
+          is_rb?: boolean | null
           logic_summary?: string | null
+          lookback_period?: Database["public"]["Enums"]["feature_period"] | null
           name: string
           required_columns?: Json | null
-          type?: string | null
+          type?: Database["public"]["Enums"]["feature_value_type"] | null
+          unique_feature_id?: string | null
         }
         Update: {
+          activity_type?: string | null
+          category?: Database["public"]["Enums"]["feature_category"] | null
           created_at?: string
           description?: string | null
           id?: string
+          is_pc?: boolean | null
+          is_rb?: boolean | null
           logic_summary?: string | null
+          lookback_period?: Database["public"]["Enums"]["feature_period"] | null
           name?: string
           required_columns?: Json | null
-          type?: string | null
+          type?: Database["public"]["Enums"]["feature_value_type"] | null
+          unique_feature_id?: string | null
         }
         Relationships: []
       }
@@ -76,8 +94,8 @@ export type Database = {
           id: string
           name: string
           publication_date: string | null
+          publisher: string | null
           region: string | null
-          source: string | null
         }
         Insert: {
           created_at?: string
@@ -85,8 +103,8 @@ export type Database = {
           id?: string
           name: string
           publication_date?: string | null
+          publisher?: string | null
           region?: string | null
-          source?: string | null
         }
         Update: {
           created_at?: string
@@ -94,8 +112,8 @@ export type Database = {
           id?: string
           name?: string
           publication_date?: string | null
+          publisher?: string | null
           region?: string | null
-          source?: string | null
         }
         Relationships: []
       }
@@ -131,33 +149,33 @@ export type Database = {
       }
       risk_indicators: {
         Row: {
-          activity_type: string | null
+          aml_typology: string | null
           category: string | null
           created_at: string
           description: string | null
           id: string
-          lookback_period: string | null
           name: string
+          predicate_offence: string | null
           unique_risk_id: string
         }
         Insert: {
-          activity_type?: string | null
+          aml_typology?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
           id?: string
-          lookback_period?: string | null
           name: string
+          predicate_offence?: string | null
           unique_risk_id: string
         }
         Update: {
-          activity_type?: string | null
+          aml_typology?: string | null
           category?: string | null
           created_at?: string
           description?: string | null
           id?: string
-          lookback_period?: string | null
           name?: string
+          predicate_offence?: string | null
           unique_risk_id?: string
         }
         Relationships: []
@@ -224,7 +242,17 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      feature_category:
+        | "Geography"
+        | "Keywords"
+        | "Pseudo-Customer"
+        | "Respondent"
+        | "Transaction"
+      feature_period:
+        | "Current month"
+        | "History 12 months"
+        | "Current and previous month"
+      feature_value_type: "Value" | "Volume" | "Rule" | "Ratio"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -339,6 +367,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      feature_category: [
+        "Geography",
+        "Keywords",
+        "Pseudo-Customer",
+        "Respondent",
+        "Transaction",
+      ],
+      feature_period: [
+        "Current month",
+        "History 12 months",
+        "Current and previous month",
+      ],
+      feature_value_type: ["Value", "Volume", "Rule", "Ratio"],
+    },
   },
 } as const

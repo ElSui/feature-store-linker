@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { Cpu, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { Cpu, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,35 +11,96 @@ import { dataStore } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
+import { supabase } from '@/integrations/supabase/client';
+
+// Define the type for our Feature based on the database schema
+export type Feature = {
+  id: string; // UUID from Supabase
+  name: string;
+  type: 'AI Model Feature' | 'Simple Rule' | 'Calculation' | 'Value' | 'Volume' | 'Ratio';
+  description: string;
+  logic_summary: string;
+  required_columns: string[];
+  is_pc: boolean;
+  is_rb: boolean;
+  unique_feature_id: string;
+  category: string;
+  lookback_period: string;
+};
 
 const FeaturesList = () => {
-  const features = dataStore.getFeatures();
+  const [features, setFeatures] = useState<Feature[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this feature?')) {
-      dataStore.deleteFeature(id);
-      navigate('/features', { replace: true });
-    }
+  useEffect(() => {
+    const fetchFeatures = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('features')
+        .select('*');
+
+      if (error) {
+        setError(error.message);
+        console.error('Error fetching features:', error);
+      } else {
+        setFeatures(data as Feature[]);
+      }
+      setLoading(false);
+    };
+
+    fetchFeatures();
+  }, []);
+
+  const handleDelete = (id: string) => {
+    // Note: We will implement the Supabase delete logic in a future step.
+    alert(`(Placeholder) Are you sure you want to delete feature with ID: ${id}?`);
   };
 
-  const handleViewDetails = (id: number) => {
-    console.log('Navigating to feature:', id);
+  const handleViewDetails = (id: string) => {
     navigate(`/features/${id}`);
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'AI Model Feature':
+      case 'Value':
         return 'bg-blue-500 text-white';
       case 'Simple Rule':
+      case 'Rule':
         return 'bg-green-500 text-white';
       case 'Calculation':
+      case 'Ratio':
         return 'bg-orange-500 text-white';
       default:
         return 'bg-gray-500 text-white';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Features...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+          <p className="ml-4 text-lg text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -49,7 +109,7 @@ const FeaturesList = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Features</h1>
-            <p className="text-gray-600 mt-2">Manage AI models, rules and calculations</p>
+            <p className="text-gray-600 mt-2">Manage all features from the central database</p>
           </div>
           <Link to="/features/new">
             <Button>
@@ -58,10 +118,9 @@ const FeaturesList = () => {
             </Button>
           </Link>
         </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {features.map((feature) => (
-            <Card key={feature.id} className="hover:shadow-lg transition-shadow">
+            <Card key={feature.id} className="hover:shadow-lg transition-shadow flex flex-col">
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <Cpu className="w-8 h-8 text-purple-500" />
@@ -71,9 +130,9 @@ const FeaturesList = () => {
                         <Edit className="w-4 h-4" />
                       </Button>
                     </Link>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => handleDelete(feature.id)}
                       className="text-red-600 hover:text-red-800"
                     >
@@ -81,18 +140,21 @@ const FeaturesList = () => {
                     </Button>
                   </div>
                 </div>
-                <CardTitle className="text-lg">{feature.name}</CardTitle>
+                <CardTitle className="text-lg pt-2">{feature.name}</CardTitle>
                 <CardDescription>
-                  <Badge className={`mt-2 ${getTypeColor(feature.type)}`}>
-                    {feature.type}
-                  </Badge>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline">{feature.unique_feature_id}</Badge>
+                    <Badge className={getTypeColor(feature.type)}>{feature.type}</Badge>
+                    {feature.is_pc && <Badge variant="secondary">PC</Badge>}
+                    {feature.is_rb && <Badge variant="secondary">RB</Badge>}
+                  </div>
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-grow flex flex-col justify-between">
                 <div className="text-gray-600 text-sm mb-4 line-clamp-3">{feature.description}</div>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
+                <Button
+                  variant="outline"
+                  className="w-full mt-auto"
                   onClick={() => handleViewDetails(feature.id)}
                 >
                   View Details
