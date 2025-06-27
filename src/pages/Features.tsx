@@ -503,14 +503,9 @@ const FeatureDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumb items={breadcrumbItems} />
         
-        <div className="mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{feature.name}</h1>
-              <Badge className={`mt-2 ${getTypeColor(feature.type)} text-white`}>
-                {feature.type}
-              </Badge>
-            </div>
+        <div className="mb-8">
+          <div className="flex justify-between items-start mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">{feature.name}</h1>
             <Link to={`/features/${feature.id}/edit`}>
               <Button>
                 <Edit className="w-4 h-4 mr-2" />
@@ -518,27 +513,51 @@ const FeatureDetail = () => {
               </Button>
             </Link>
           </div>
+          
+          {/* New Badge Group */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="outline">{feature.unique_feature_id}</Badge>
+            {feature.category && (
+              <Badge className={getCategoryColor(feature.category)}>
+                {feature.category}
+              </Badge>
+            )}
+            <Badge variant="outline">{feature.type}</Badge>
+            {feature.is_pc && <Badge variant="secondary">PC</Badge>}
+            {feature.is_rb && <Badge variant="secondary">RB</Badge>}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Details Section - Two Column Grid */}
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Feature Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Description</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+              
+              <div className="space-y-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Description</h3>
-                  <p className="text-gray-600">{feature.description}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Logic Summary</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Logic Summary</h3>
                   <p className="text-gray-600">{feature.logic_summary}</p>
                 </div>
-              </CardContent>
-            </Card>
+                
+                {feature.required_columns && feature.required_columns.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">Required Columns</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {feature.required_columns.map((column, index) => (
+                        <Badge key={index} variant="secondary">{column}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
+          {/* Relationship Section */}
           <div>
             <RelationshipSection
               title="Linked Risk Indicators"
