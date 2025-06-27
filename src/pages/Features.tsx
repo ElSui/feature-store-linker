@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Cpu, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
@@ -172,11 +173,192 @@ const FeaturesList = () => {
 const FeatureDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const feature = dataStore.getFeature(Number(id));
-  const linkedRiskIndicators = dataStore.getLinkedRiskIndicatorsForFeature(Number(id));
   
-  const allRiskIndicators = dataStore.getRiskIndicators();
-  const unlinkedRiskIndicators = allRiskIndicators.filter(risk => !linkedRiskIndicators.find(linked => linked.id === risk.id));
+  // State variables for data and UI state
+  const [feature, setFeature] = useState<Feature | null>(null);
+  const [linkedRiskIndicators, setLinkedRiskIndicators] = useState<any[]>([]);
+  const [availableRiskIndicators, setAvailableRiskIndicators] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFeatureData = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Fetch the feature
+        const { data: featureData, error: featureError } = await supabase
+          .from('features')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+
+        if (featureError) throw featureError;
+        if (!featureData) {
+          setError('Feature not found');
+          setLoading(false);
+          return;
+        }
+
+        setFeature(featureData as Feature);
+
+        // Fetch linked risk indicators
+        const { data: linkedRisks, error: linkedError } = await supabase
+          .from('risk_feature_links')
+          .select(`
+            risk_indicators (
+              id,
+              name,
+              description,
+              category,
+              aml_typology,
+              predicate_offence,
+              unique_risk_id
+            )
+          `)
+          .eq('feature_id', id);
+
+        if (linkedError) throw linkedError;
+
+        const linkedRiskData = linkedRisks?.map(link => link.risk_indicators).filter(Boolean) || [];
+        setLinkedRiskIndicators(linkedRiskData);
+
+        // Fetch all risk indicators
+        const { data: allRisks, error: allRisksError } = await supabase
+          .from('risk_indicators')
+          .select('*');
+
+        if (allRisksError) throw allRisksError;
+
+        // Calculate available (unlinked) risk indicators
+        const linkedIds = linkedRiskData.map(risk => risk.id);
+        const availableRisks = (allRisks || []).filter(risk => !linkedIds.includes(risk.id));
+        setAvailableRiskIndicators(availableRisks);
+
+      } catch (err: any) {
+        console.error('Error fetching feature data:', err);
+        setError(err.message || 'Failed to load feature data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeatureData();
+  }, [id]);
+
+  const handleLinkRiskIndicators = async (riskIds: number[]) => {
+    if (!id) return;
+
+    try {
+      // Insert new links in the risk_feature_links table
+      const linksToInsert = riskIds.map(riskId => ({
+        feature_id: id,
+        risk_indicator_id: riskId.toString()
+      }));
+
+      const { error } = await supabase
+        .from('risk_feature_links')
+        .insert(linksToInsert);
+
+      if (error) throw error;
+
+      // Refetch data to update the UI
+      const fetchUpdatedData = async () => {
+        const { data: linkedRisks, error: linkedError } = await supabase
+          .from('risk_feature_links')
+          .select(`
+            risk_indicators (
+              id,
+              name,
+              description,
+              category,
+              aml_typology,
+              predicate_offence,
+              unique_risk_id
+            )
+          `)
+          .eq('feature_id', id);
+
+        if (!linkedError) {
+          const linkedRiskData = linkedRisks?.map(link => link.risk_indicators).filter(Boolean) || [];
+          setLinkedRiskIndicators(linkedRiskData);
+
+          // Update available risks
+          const linkedIds = linkedRiskData.map(risk => risk.id);
+          setAvailableRiskIndicators(prev => prev.filter(risk => !linkedIds.includes(risk.id)));
+        }
+      };
+
+      await fetchUpdatedData();
+    } catch (err: any) {
+      console.error('Error linking risk indicators:', err);
+      alert('Failed to link risk indicators: ' + err.message);
+    }
+  };
+
+  const handleUnlinkRiskIndicator = async (riskId: number) => {
+    if (!id) return;
+
+    try {
+      const { error } = await supabase
+        .from('risk_feature_links')
+        .delete()
+        .eq('feature_id', id)
+        .eq('risk_indicator_id', riskId.toString());
+
+      if (error) throw error;
+
+      // Update state locally
+      const unlinkedRisk = linkedRiskIndicators.find(risk => risk.id === riskId.toString());
+      if (unlinkedRisk) {
+        setLinkedRiskIndicators(prev => prev.filter(risk => risk.id !== riskId.toString()));
+        setAvailableRiskIndicators(prev => [...prev, unlinkedRisk]);
+      }
+    } catch (err: any) {
+      console.error('Error unlinking risk indicator:', err);
+      alert('Failed to unlink risk indicator: ' + err.message);
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'AI Model Feature':
+        return 'default';
+      case 'Simple Rule':
+        return 'secondary';
+      case 'Calculation':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Feature Details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+          <p className="ml-4 text-lg text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!feature) {
     return (
@@ -193,31 +375,6 @@ const FeatureDetail = () => {
       </div>
     );
   }
-
-  const handleLinkRiskIndicators = (riskIds: number[]) => {
-    riskIds.forEach(riskId => {
-      dataStore.addRiskFeatureLink(riskId, feature.id);
-    });
-    navigate(`/features/${feature.id}`, { replace: true });
-  };
-
-  const handleUnlinkRiskIndicator = (riskId: number) => {
-    dataStore.removeRiskFeatureLink(riskId, feature.id);
-    navigate(`/features/${feature.id}`, { replace: true });
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'AI Model Feature':
-        return 'default';
-      case 'Simple Rule':
-        return 'secondary';
-      case 'Calculation':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
 
   const breadcrumbItems = [
     { label: 'Features', href: '/features' },
@@ -271,7 +428,7 @@ const FeatureDetail = () => {
               title="Linked Risk Indicators"
               description="Risk indicators associated with this feature"
               linkedEntities={linkedRiskIndicators}
-              availableEntities={unlinkedRiskIndicators}
+              availableEntities={availableRiskIndicators}
               entityType="risk-indicators"
               onLink={handleLinkRiskIndicators}
               onUnlink={handleUnlinkRiskIndicator}
