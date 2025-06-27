@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { AlertTriangle, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
@@ -47,62 +46,64 @@ const RiskIndicatorsTable = ({ riskIndicators, handleViewDetails, handleDelete }
   handleDelete: (id: string) => void;
 }) => {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>ID</TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>AML Typology</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {riskIndicators.map((risk) => (
-          <TableRow key={risk.id} className="hover:bg-muted/50">
-            <TableCell>
-              <Badge variant="outline">{risk.unique_risk_id}</Badge>
-            </TableCell>
-            <TableCell className="font-medium">{risk.name}</TableCell>
-            <TableCell>
-              {risk.category ? (
-                <Badge className={getCategoryColor(risk.category)}>{risk.category}</Badge>
-              ) : (
-                <span className="text-gray-400">-</span>
-              )}
-            </TableCell>
-            <TableCell>
-              {risk.aml_typology || <span className="text-gray-400">-</span>}
-            </TableCell>
-            <TableCell>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleViewDetails(risk.id)}
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  View
-                </Button>
-                <Link to={`/risk-indicators/${risk.id}/edit`}>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleDelete(risk.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>AML Typology</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {riskIndicators.map((risk) => (
+            <TableRow key={risk.id} className="hover:bg-muted/50">
+              <TableCell>
+                <Badge variant="outline">{risk.unique_risk_id}</Badge>
+              </TableCell>
+              <TableCell className="font-medium">{risk.name}</TableCell>
+              <TableCell>
+                {risk.category ? (
+                  <Badge className={getCategoryColor(risk.category)}>{risk.category}</Badge>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {risk.aml_typology || <span className="text-gray-400">-</span>}
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetails(risk.id)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                  <Link to={`/risk-indicators/${risk.id}/edit`}>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleDelete(risk.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

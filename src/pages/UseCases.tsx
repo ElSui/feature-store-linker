@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
@@ -44,60 +43,62 @@ const UseCasesTable = ({ useCases, handleViewDetails, handleDelete }: {
   handleDelete: (id: string) => void;
 }) => {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Business Area</TableHead>
-          <TableHead>Description</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {useCases.map((useCase) => (
-          <TableRow key={useCase.id} className="hover:bg-muted/50">
-            <TableCell className="font-medium">{useCase.name}</TableCell>
-            <TableCell>
-              {useCase.business_area ? (
-                <Badge className={getCategoryColor(useCase.business_area)}>{useCase.business_area}</Badge>
-              ) : (
-                <span className="text-gray-400">-</span>
-              )}
-            </TableCell>
-            <TableCell>
-              <div className="line-clamp-2 max-w-md">
-                {useCase.description || <span className="text-gray-400">No description</span>}
-              </div>
-            </TableCell>
-            <TableCell>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleViewDetails(useCase.id)}
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  View
-                </Button>
-                <Link to={`/use-cases/${useCase.id}/edit`}>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleDelete(useCase.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Business Area</TableHead>
+            <TableHead>Description</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {useCases.map((useCase) => (
+            <TableRow key={useCase.id} className="hover:bg-muted/50">
+              <TableCell className="font-medium">{useCase.name}</TableCell>
+              <TableCell>
+                {useCase.business_area ? (
+                  <Badge className={getCategoryColor(useCase.business_area)}>{useCase.business_area}</Badge>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="line-clamp-2 max-w-md">
+                  {useCase.description || <span className="text-gray-400">No description</span>}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetails(useCase.id)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                  <Link to={`/use-cases/${useCase.id}/edit`}>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleDelete(useCase.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 

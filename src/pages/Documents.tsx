@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
@@ -50,69 +49,71 @@ const DocumentsTable = ({ documents, handleViewDetails, handleDelete }: {
   handleDelete: (id: string) => void;
 }) => {
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Publisher</TableHead>
-          <TableHead>Region</TableHead>
-          <TableHead>Publication Date</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {documents.map((document) => (
-          <TableRow key={document.id} className="hover:bg-muted/50">
-            <TableCell className="font-medium">{document.name}</TableCell>
-            <TableCell>
-              {document.publisher ? (
-                <Badge className={getCategoryColor(document.publisher)}>{document.publisher}</Badge>
-              ) : (
-                <span className="text-gray-400">-</span>
-              )}
-            </TableCell>
-            <TableCell>
-              {document.region ? (
-                <Badge variant="outline">{document.region}</Badge>
-              ) : (
-                <span className="text-gray-400">-</span>
-              )}
-            </TableCell>
-            <TableCell>
-              {document.publication_date 
-                ? new Date(document.publication_date).toLocaleDateString()
-                : <span className="text-gray-400">-</span>
-              }
-            </TableCell>
-            <TableCell>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleViewDetails(document.id)}
-                >
-                  <ExternalLink className="w-4 h-4 mr-1" />
-                  View
-                </Button>
-                <Link to={`/documents/${document.id}/edit`}>
-                  <Button variant="ghost" size="sm">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleDelete(document.id)}
-                  className="text-red-600 hover:text-red-800"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Publisher</TableHead>
+            <TableHead>Region</TableHead>
+            <TableHead>Publication Date</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {documents.map((document) => (
+            <TableRow key={document.id} className="hover:bg-muted/50">
+              <TableCell className="font-medium">{document.name}</TableCell>
+              <TableCell>
+                {document.publisher ? (
+                  <Badge className={getCategoryColor(document.publisher)}>{document.publisher}</Badge>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {document.region ? (
+                  <Badge variant="outline">{document.region}</Badge>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </TableCell>
+              <TableCell>
+                {document.publication_date 
+                  ? new Date(document.publication_date).toLocaleDateString()
+                  : <span className="text-gray-400">-</span>
+                }
+              </TableCell>
+              <TableCell>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetails(document.id)}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                  <Link to={`/documents/${document.id}/edit`}>
+                    <Button variant="ghost" size="sm">
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleDelete(document.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
