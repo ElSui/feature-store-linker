@@ -1,34 +1,88 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { FileText, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { dataStore, RegulatoryDocument } from '@/store/dataStore';
+import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
 
+// Define the type for our Document based on the database schema
+export type RegulatoryDocument = {
+  id: string;
+  name: string;
+  publisher: string | null;
+  region: string | null;
+  publication_date: string | null;
+  document_url: string | null;
+  created_at: string;
+};
+
 const DocumentsList = () => {
-  const documents = dataStore.getDocuments();
+  const [documents, setDocuments] = useState<RegulatoryDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleDelete = (id: number) => {
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('regulatory_documents')
+        .select('*');
+
+      if (error) {
+        setError(error.message);
+        console.error('Error fetching documents:', error);
+      } else {
+        setDocuments(data as RegulatoryDocument[]);
+      }
+      setLoading(false);
+    };
+
+    fetchDocuments();
+  }, []);
+
+  const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this document?')) {
-      dataStore.deleteDocument(id);
-      // Force re-render by navigating to same route
-      navigate('/documents', { replace: true });
+      // TODO: Implement Supabase delete logic
+      console.log('Delete document:', id);
     }
   };
 
-  const handleViewDetails = (id: number) => {
+  const handleViewDetails = (id: string) => {
     console.log('Navigating to document:', id);
     navigate(`/documents/${id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Documents...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+          <p className="ml-4 text-lg text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -72,14 +126,17 @@ const DocumentsList = () => {
                 <CardTitle className="text-lg">{document.name}</CardTitle>
                 <CardDescription>
                   <div className="flex flex-wrap gap-2 mt-2">
-                    <Badge variant="secondary">{document.source}</Badge>
-                    <Badge variant="outline">{document.region}</Badge>
+                    {document.publisher && <Badge variant="secondary">{document.publisher}</Badge>}
+                    {document.region && <Badge variant="outline">{document.region}</Badge>}
                   </div>
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{document.summary}</div>
-                <div className="text-xs text-gray-500 mb-4">Published: {document.publication_date}</div>
+                {document.publication_date && (
+                  <div className="text-xs text-gray-500 mb-4">
+                    Published: {new Date(document.publication_date).toLocaleDateString()}
+                  </div>
+                )}
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -100,100 +157,18 @@ const DocumentsList = () => {
 const DocumentDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const document = dataStore.getDocument(Number(id));
-  const linkedUseCases = dataStore.getLinkedUseCasesForDocument(Number(id));
-  const allUseCases = dataStore.getUseCases();
-  const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
-
-  console.log('DocumentDetail - ID:', id, 'Document:', document);
-
-  if (!document) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Document not found</h1>
-            <Link to="/documents">
-              <Button className="mt-4">Back to Documents</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const handleLinkUseCases = (useCaseIds: number[]) => {
-    useCaseIds.forEach(useCaseId => {
-      dataStore.addDocumentUseCaseLink(document.id, useCaseId);
-    });
-    navigate(`/documents/${document.id}`, { replace: true });
-  };
-
-  const handleUnlinkUseCase = (useCaseId: number) => {
-    dataStore.removeDocumentUseCaseLink(document.id, useCaseId);
-    navigate(`/documents/${document.id}`, { replace: true });
-  };
-
-  const breadcrumbItems = [
-    { label: 'Documents', href: '/documents' },
-    { label: document.name, type: 'document' as const }
-  ];
-
+  
+  // For now, show placeholder until we implement detail fetching
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Breadcrumb items={breadcrumbItems} />
-        
-        <div className="mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{document.name}</h1>
-              <div className="flex gap-2 mt-2">
-                <Badge>{document.source}</Badge>
-                <Badge variant="outline">{document.region}</Badge>
-              </div>
-            </div>
-            <Link to={`/documents/${document.id}/edit`}>
-              <Button>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Document Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Publication Date</h3>
-                  <p className="text-gray-600">{document.publication_date}</p>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Summary</h3>
-                  <p className="text-gray-600">{document.summary}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div>
-            <RelationshipSection
-              title="Linked Use Cases"
-              description="Use cases associated with this document"
-              linkedEntities={linkedUseCases}
-              availableEntities={unlinkedUseCases}
-              entityType="use-cases"
-              onLink={handleLinkUseCases}
-              onUnlink={handleUnlinkUseCase}
-            />
-          </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Document Detail (Coming Soon)</h1>
+          <p className="text-gray-600 mt-2">Document ID: {id}</p>
+          <Link to="/documents">
+            <Button className="mt-4">Back to Documents</Button>
+          </Link>
         </div>
       </div>
     </div>
@@ -201,115 +176,20 @@ const DocumentDetail = () => {
 };
 
 const DocumentForm = ({ isEdit = false }: { isEdit?: boolean }) => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const existingDocument = isEdit ? dataStore.getDocument(Number(id)) : null;
-
-  const [formData, setFormData] = useState({
-    name: existingDocument?.name || '',
-    source: existingDocument?.source || '',
-    region: existingDocument?.region || '',
-    publication_date: existingDocument?.publication_date || '',
-    summary: existingDocument?.summary || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isEdit && existingDocument) {
-      dataStore.updateDocument(existingDocument.id, formData);
-      navigate(`/documents/${existingDocument.id}`);
-    } else {
-      const newDocument = dataStore.addDocument(formData);
-      navigate(`/documents/${newDocument.id}`);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link to="/documents" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-            ← Back to Documents
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isEdit ? 'Edit Document' : 'New Document'}
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEdit ? 'Edit Document (Coming Soon)' : 'New Document (Coming Soon)'}
           </h1>
+          <Link to="/documents">
+            <Button className="mt-4">Back to Documents</Button>
+          </Link>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEdit ? 'Edit Document' : 'Create New Document'}</CardTitle>
-            <CardDescription>
-              {isEdit ? 'Update the document information' : 'Fill in the details for the new regulatory document'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="name">Document Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="e.g., FATF Guidance on Digital Assets"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="source">Source</Label>
-                  <Input
-                    id="source"
-                    value={formData.source}
-                    onChange={(e) => setFormData({...formData, source: e.target.value})}
-                    placeholder="e.g., FATF"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="region">Region</Label>
-                  <Input
-                    id="region"
-                    value={formData.region}
-                    onChange={(e) => setFormData({...formData, region: e.target.value})}
-                    placeholder="e.g., Global, EU, Nigeria"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="publication_date">Publication Date</Label>
-                <Input
-                  id="publication_date"
-                  type="date"
-                  value={formData.publication_date}
-                  onChange={(e) => setFormData({...formData, publication_date: e.target.value})}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="summary">Summary</Label>
-                <Textarea
-                  id="summary"
-                  value={formData.summary}
-                  onChange={(e) => setFormData({...formData, summary: e.target.value})}
-                  placeholder="Brief description of the document content and purpose"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => navigate('/documents')}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {isEdit ? 'Update Document' : 'Create Document'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

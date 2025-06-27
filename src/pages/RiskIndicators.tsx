@@ -1,32 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
-import { AlertTriangle, Plus, Edit, Trash2, ExternalLink } from 'lucide-react';
+import { AlertTriangle, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { dataStore } from '@/store/dataStore';
+import { supabase } from '@/integrations/supabase/client';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
 
+// Define the type for our RiskIndicator based on the database schema
+export type RiskIndicator = {
+  id: string;
+  unique_risk_id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  aml_typology: string | null;
+  predicate_offence: string | null;
+  created_at: string;
+};
+
 const RiskIndicatorsList = () => {
-  const riskIndicators = dataStore.getRiskIndicators();
+  const [riskIndicators, setRiskIndicators] = useState<RiskIndicator[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleDelete = (id: number) => {
+  useEffect(() => {
+    const fetchRiskIndicators = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('risk_indicators')
+        .select('*');
+
+      if (error) {
+        setError(error.message);
+        console.error('Error fetching risk indicators:', error);
+      } else {
+        setRiskIndicators(data as RiskIndicator[]);
+      }
+      setLoading(false);
+    };
+
+    fetchRiskIndicators();
+  }, []);
+
+  const handleDelete = (id: string) => {
     if (window.confirm('Are you sure you want to delete this risk indicator?')) {
-      dataStore.deleteRiskIndicator(id);
-      navigate('/risk-indicators', { replace: true });
+      // TODO: Implement Supabase delete logic
+      console.log('Delete risk indicator:', id);
     }
   };
 
-  const handleViewDetails = (id: number) => {
+  const handleViewDetails = (id: string) => {
     console.log('Navigating to risk indicator:', id);
     navigate(`/risk-indicators/${id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Risk Indicators...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+          <p className="ml-4 text-lg text-red-600">Error: {error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,11 +126,16 @@ const RiskIndicatorsList = () => {
                 </div>
                 <CardTitle className="text-lg">{risk.name}</CardTitle>
                 <CardDescription>
-                  <Badge variant="secondary" className="mt-2">{risk.category}</Badge>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <Badge variant="outline">{risk.unique_risk_id}</Badge>
+                    {risk.category && <Badge variant="secondary">{risk.category}</Badge>}
+                  </div>
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-gray-600 text-sm mb-4 line-clamp-3">{risk.description}</div>
+                <div className="text-gray-600 text-sm mb-4 line-clamp-3">
+                  {risk.description || 'No description available'}
+                </div>
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -94,136 +156,17 @@ const RiskIndicatorsList = () => {
 const RiskIndicatorDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const riskIndicator = dataStore.getRiskIndicator(Number(id));
-  const linkedUseCases = dataStore.getLinkedUseCasesForRiskIndicator(Number(id));
-  const linkedFeatures = dataStore.getLinkedFeaturesForRiskIndicator(Number(id));
-  
-  const allUseCases = dataStore.getUseCases();
-  const allFeatures = dataStore.getFeatures();
-  const unlinkedUseCases = allUseCases.filter(uc => !linkedUseCases.find(linked => linked.id === uc.id));
-  const unlinkedFeatures = allFeatures.filter(feature => !linkedFeatures.find(linked => linked.id === feature.id));
-
-  console.log('RiskIndicatorDetail - ID:', id, 'RiskIndicator:', riskIndicator);
-
-  if (!riskIndicator) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Risk indicator not found</h1>
-            <Link to="/risk-indicators">
-              <Button className="mt-4">Back to Risk Indicators</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const handleLinkUseCases = (useCaseIds: number[]) => {
-    useCaseIds.forEach(useCaseId => {
-      dataStore.addUseCaseRiskLink(useCaseId, riskIndicator.id);
-    });
-    navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
-  };
-
-  const handleUnlinkUseCase = (useCaseId: number) => {
-    dataStore.removeUseCaseRiskLink(useCaseId, riskIndicator.id);
-    navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
-  };
-
-  const handleLinkFeatures = (featureIds: number[]) => {
-    featureIds.forEach(featureId => {
-      dataStore.addRiskFeatureLink(riskIndicator.id, featureId);
-    });
-    navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
-  };
-
-  const handleUnlinkFeature = (featureId: number) => {
-    dataStore.removeRiskFeatureLink(riskIndicator.id, featureId);
-    navigate(`/risk-indicators/${riskIndicator.id}`, { replace: true });
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'AI Model Feature':
-        return 'default';
-      case 'Simple Rule':
-        return 'secondary';
-      case 'Calculation':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const breadcrumbItems = [
-    { label: 'Risk Indicators', href: '/risk-indicators' },
-    { label: riskIndicator.name, type: 'risk-indicator' as const }
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Breadcrumb items={breadcrumbItems} />
-        
-        <div className="mb-6">
-          <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{riskIndicator.name}</h1>
-              <Badge className="mt-2">{riskIndicator.category}</Badge>
-            </div>
-            <Link to={`/risk-indicators/${riskIndicator.id}/edit`}>
-              <Button>
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            </Link>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Risk Indicator Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Description</h3>
-                  <p className="text-gray-600 mt-2">{riskIndicator.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <RelationshipSection
-              title="Linked Use Cases"
-              description="Use cases associated with this risk indicator"
-              linkedEntities={linkedUseCases}
-              availableEntities={unlinkedUseCases}
-              entityType="use-cases"
-              onLink={handleLinkUseCases}
-              onUnlink={handleUnlinkUseCase}
-            />
-          </div>
-
-          <div>
-            <RelationshipSection
-              title="Linked Features"
-              description="Features (AI models, rules, calculations) associated with this risk indicator"
-              linkedEntities={linkedFeatures}
-              availableEntities={unlinkedFeatures}
-              entityType="features"
-              onLink={handleLinkFeatures}
-              onUnlink={handleUnlinkFeature}
-              getBadgeInfo={(feature) => ({ 
-                text: feature.type || 'Unknown Type',
-                variant: getTypeColor(feature.type || '')
-              })}
-            />
-          </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Risk Indicator Detail (Coming Soon)</h1>
+          <p className="text-gray-600 mt-2">Risk Indicator ID: {id}</p>
+          <Link to="/risk-indicators">
+            <Button className="mt-4">Back to Risk Indicators</Button>
+          </Link>
         </div>
       </div>
     </div>
@@ -231,92 +174,20 @@ const RiskIndicatorDetail = () => {
 };
 
 const RiskIndicatorForm = ({ isEdit = false }: { isEdit?: boolean }) => {
-  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const existingRisk = isEdit ? dataStore.getRiskIndicator(Number(id)) : null;
-
-  const [formData, setFormData] = useState({
-    name: existingRisk?.name || '',
-    description: existingRisk?.description || '',
-    category: existingRisk?.category || ''
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isEdit && existingRisk) {
-      dataStore.updateRiskIndicator(existingRisk.id, formData);
-      navigate(`/risk-indicators/${existingRisk.id}`);
-    } else {
-      const newRisk = dataStore.addRiskIndicator(formData);
-      navigate(`/risk-indicators/${newRisk.id}`);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navigation />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link to="/risk-indicators" className="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-            ← Back to Risk Indicators
-          </Link>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {isEdit ? 'Edit Risk Indicator' : 'New Risk Indicator'}
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">
+            {isEdit ? 'Edit Risk Indicator (Coming Soon)' : 'New Risk Indicator (Coming Soon)'}
           </h1>
+          <Link to="/risk-indicators">
+            <Button className="mt-4">Back to Risk Indicators</Button>
+          </Link>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{isEdit ? 'Edit Risk Indicator' : 'Create New Risk Indicator'}</CardTitle>
-            <CardDescription>
-              {isEdit ? 'Update the risk indicator information' : 'Fill in the details for the new risk indicator'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <Label htmlFor="name">Risk Indicator Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="e.g., Transactions to/from High-Risk Jurisdictions"
-                  required
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Input
-                  id="category"
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  placeholder="e.g., Geographic, Velocity, Digital Assets"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Detailed description of the risk indicator"
-                  rows={4}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <Button type="button" variant="outline" onClick={() => navigate('/risk-indicators')}>
-                  Cancel
-                </Button>
-                <Button type="submit">
-                  {isEdit ? 'Update Risk Indicator' : 'Create Risk Indicator'}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

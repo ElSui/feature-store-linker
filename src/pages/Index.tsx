@@ -1,17 +1,46 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network } from 'lucide-react';
+import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network, LoaderCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
 
 const Dashboard = () => {
-  const entityStats = {
-    documents: 3,
-    useCases: 3,
-    riskIndicators: 5,
-    features: 5
-  };
+  const [entityStats, setEntityStats] = useState({
+    documents: 0,
+    useCases: 0,
+    riskIndicators: 0,
+    features: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      setLoading(true);
+      try {
+        const [documentsCount, useCasesCount, riskIndicatorsCount, featuresCount] = await Promise.all([
+          supabase.from('regulatory_documents').select('id', { count: 'exact', head: true }),
+          supabase.from('use_cases').select('id', { count: 'exact', head: true }),
+          supabase.from('risk_indicators').select('id', { count: 'exact', head: true }),
+          supabase.from('features').select('id', { count: 'exact', head: true })
+        ]);
+
+        setEntityStats({
+          documents: documentsCount.count || 0,
+          useCases: useCasesCount.count || 0,
+          riskIndicators: riskIndicatorsCount.count || 0,
+          features: featuresCount.count || 0
+        });
+      } catch (error) {
+        console.error('Error fetching counts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCounts();
+  }, []);
 
   const entities = [
     {
@@ -115,7 +144,13 @@ const Dashboard = () => {
                     <div className={`p-3 rounded-lg ${entity.color}`}>
                       <IconComponent className="h-6 w-6 text-white" />
                     </div>
-                    <span className="text-2xl font-bold text-gray-900">{entity.count}</span>
+                    <span className="text-2xl font-bold text-gray-900">
+                      {loading ? (
+                        <LoaderCircle className="w-6 h-6 animate-spin" />
+                      ) : (
+                        entity.count
+                      )}
+                    </span>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -171,23 +206,23 @@ const Dashboard = () => {
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-gray-900">New regulatory document added: "Guidance on Virtual Assets"</span>
+                <span className="text-gray-900">Connected to live Supabase database</span>
               </div>
-              <span className="text-sm text-gray-500">2 hours ago</span>
+              <span className="text-sm text-gray-500">Just now</span>
             </div>
             <div className="flex items-center justify-between py-2 border-b border-gray-100">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-gray-900">Use case "Cross-Border Payments" linked to 2 risk indicators</span>
+                <span className="text-gray-900">All pages now display live data from database</span>
               </div>
-              <span className="text-sm text-gray-500">4 hours ago</span>
+              <span className="text-sm text-gray-500">Just now</span>
             </div>
             <div className="flex items-center justify-between py-2">
               <div className="flex items-center space-x-3">
                 <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-gray-900">Feature "Structuring Detection Model" updated</span>
+                <span className="text-gray-900">Mock data store successfully replaced</span>
               </div>
-              <span className="text-sm text-gray-500">1 day ago</span>
+              <span className="text-sm text-gray-500">Just now</span>
             </div>
           </div>
         </div>
