@@ -440,19 +440,6 @@ const FeatureDetail = () => {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'AI Model Feature':
-        return 'default';
-      case 'Simple Rule':
-        return 'secondary';
-      case 'Calculation':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -504,32 +491,39 @@ const FeatureDetail = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Breadcrumb items={breadcrumbItems} />
         
-        {/* Page Header */}
-        <div className="mb-8">
+        {/* Header Section */}
+        <div className="bg-white rounded-lg shadow-sm border p-8 mb-8">
           <div className="flex justify-between items-start mb-6">
             <div className="flex-1">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">{feature.name}</h1>
-              
-              {/* Key Identifiers Badge Group */}
-              <div className="flex flex-wrap gap-3">
-                <Badge variant="outline" className="text-sm font-mono">
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">{feature.name}</h1>
+              <div className="flex items-center gap-3 mb-4">
+                <Badge variant="outline" className="font-mono text-sm px-3 py-1">
                   {feature.unique_feature_id}
                 </Badge>
                 {feature.category && (
-                  <Badge className={getCategoryColor(feature.category)}>
+                  <Badge className={`${getCategoryColor(feature.category)} px-3 py-1`}>
                     {feature.category}
                   </Badge>
                 )}
-                <Badge variant="secondary" className="text-sm">
+                <Badge variant="secondary" className="px-3 py-1">
                   {feature.type}
                 </Badge>
-                {feature.is_pc && <Badge variant="outline">PC</Badge>}
-                {feature.is_rb && <Badge variant="outline">RB</Badge>}
+              </div>
+              <div className="flex gap-2">
+                {feature.is_pc && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    Pseudo-Customer
+                  </Badge>
+                )}
+                {feature.is_rb && (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                    Respondent Bank
+                  </Badge>
+                )}
               </div>
             </div>
-            
             <Link to={`/features/${feature.id}/edit`}>
-              <Button size="lg">
+              <Button size="lg" className="bg-gray-900 hover:bg-gray-800">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </Button>
@@ -537,72 +531,59 @@ const FeatureDetail = () => {
           </div>
         </div>
 
-        {/* Main Content Layout */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Main Details Section */}
-          <div className="xl:col-span-3">
-            <Card className="shadow-sm">
-              <CardContent className="p-8">
-                <div className="space-y-8">
-                  {/* Description */}
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-3">Description</h2>
-                    <p className="text-gray-700 leading-relaxed text-base">
-                      {feature.description}
-                    </p>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description */}
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Description</h2>
+              <p className="text-gray-700 leading-relaxed">
+                {feature.description}
+              </p>
+            </div>
+
+            {/* Logic Summary */}
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Logic Summary</h2>
+              <p className="text-gray-700 leading-relaxed">
+                {feature.logic_summary}
+              </p>
+            </div>
+
+            {/* Required Columns & Technical Details */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Required Columns */}
+              {feature.required_columns && feature.required_columns.length > 0 && (
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Required Columns</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {feature.required_columns.map((column, index) => (
+                      <Badge key={index} variant="secondary" className="font-mono text-xs">
+                        {column}
+                      </Badge>
+                    ))}
                   </div>
-
-                  <Separator />
-
-                  {/* Logic Summary */}
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-900 mb-3">Logic Summary</h2>
-                    <p className="text-gray-700 leading-relaxed text-base">
-                      {feature.logic_summary}
-                    </p>
-                  </div>
-
-                  {/* Required Columns */}
-                  {feature.required_columns && feature.required_columns.length > 0 && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">Required Columns</h2>
-                        <div className="flex flex-wrap gap-2">
-                          {feature.required_columns.map((column, index) => (
-                            <Badge key={index} variant="secondary" className="font-mono text-sm">
-                              {column}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Technical Details */}
-                  {feature.lookback_period && (
-                    <>
-                      <Separator />
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900 mb-3">Technical Details</h2>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <span className="text-sm font-medium text-gray-500">Lookback Period</span>
-                              <p className="text-gray-900 font-mono">{feature.lookback_period}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
+              )}
+
+              {/* Technical Details */}
+              {feature.lookback_period && (
+                <div className="bg-white rounded-lg shadow-sm border p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Technical Details</h2>
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm font-medium text-gray-500 block">Lookback Period</span>
+                      <span className="text-gray-900 font-mono text-sm">{feature.lookback_period}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Relationships Sidebar */}
-          <div className="xl:col-span-1">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
             <RelationshipSection
               title="Risk Indicators"
               description="Risk indicators associated with this feature"

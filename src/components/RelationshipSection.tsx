@@ -79,42 +79,42 @@ const RelationshipSection: React.FC<RelationshipSectionProps> = ({
 
       <CardContent className="pt-0">
         {linkedEntities.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
+          <div className="text-center py-8 text-muted-foreground">
             <div className="text-sm">No {title.toLowerCase()} linked yet</div>
             {availableEntities.length > 0 && (
               <p className="text-xs mt-2">Use the "Link" button above to connect {title.toLowerCase()}</p>
             )}
           </div>
         ) : (
-          <div className="space-y-0">
-            {linkedEntities.map((entity, index) => (
-              <div key={entity.id}>
-                <div className="flex items-center justify-between py-4 group hover:bg-muted/50 transition-colors rounded-lg px-3 -mx-3">
-                  <div className="flex-1 min-w-0">
-                    <Link 
-                      to={getEntityLink(entity)} 
-                      className="block"
-                    >
-                      <div className="font-medium text-gray-900 hover:text-primary transition-colors group-hover:underline">
-                        {entity.name}
-                      </div>
-                      {entity.unique_risk_id && (
-                        <Badge variant="outline" className="mt-2 text-xs font-mono">
-                          {entity.unique_risk_id}
-                        </Badge>
-                      )}
-                    </Link>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onUnlink(entity.id)}
-                    className="text-muted-foreground hover:text-destructive ml-3 opacity-0 group-hover:opacity-100 transition-opacity"
+          <div className="space-y-4">
+            {linkedEntities.map((entity) => (
+              <div 
+                key={entity.id} 
+                className="flex items-start justify-between p-4 hover:bg-muted/50 transition-colors rounded-lg border border-gray-100"
+              >
+                <div className="flex-1 min-w-0">
+                  <Link 
+                    to={getEntityLink(entity)} 
+                    className="block group"
                   >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                    <div className="font-medium text-gray-900 hover:text-primary transition-colors group-hover:underline mb-2">
+                      {entity.name}
+                    </div>
+                    {entity.unique_risk_id && (
+                      <Badge variant="outline" className="text-xs font-mono">
+                        {entity.unique_risk_id}
+                      </Badge>
+                    )}
+                  </Link>
                 </div>
-                {index < linkedEntities.length - 1 && <Separator />}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onUnlink(entity.id)}
+                  className="text-muted-foreground hover:text-destructive ml-3 flex-shrink-0"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             ))}
           </div>
