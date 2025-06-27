@@ -1,6 +1,46 @@
-import { dataStore, RegulatoryDocument, UseCase, RiskIndicator, Feature } from './dataStore';
+
 import { Position } from '@xyflow/react';
 import { calculateOptimalHandlePosition } from '../utils/handleUtils';
+import { supabase } from '@/integrations/supabase/client';
+
+// Define types based on our Supabase schema
+export interface RegulatoryDocument {
+  id: string;
+  name: string;
+  publisher: string;
+  region: string;
+  publication_date: string;
+}
+
+export interface UseCase {
+  id: string;
+  name: string;
+  description: string | null;
+  business_area: string | null;
+}
+
+export interface RiskIndicator {
+  id: string;
+  unique_risk_id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  aml_typology: string | null;
+  predicate_offence: string | null;
+}
+
+export interface Feature {
+  id: string;
+  unique_feature_id: string;
+  name: string;
+  description: string;
+  logic_summary: string;
+  type: string;
+  category: string;
+  lookback_period: string;
+  is_pc: boolean;
+  is_rb: boolean;
+}
 
 export interface GraphNode {
   id: string;
@@ -141,146 +181,138 @@ export class GraphDataTransformer {
     }
   }
 
-  getGraphData(): { nodes: GraphNode[]; edges: GraphEdge[] } {
+  async getGraphData(): Promise<{ nodes: GraphNode[]; edges: GraphEdge[] }> {
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
 
-    // Get all entities
-    const documents = dataStore.getDocuments();
-    const useCases = dataStore.getUseCases();
-    const riskIndicators = dataStore.getRiskIndicators();
-    const features = dataStore.getFeatures();
+    try {
+      // Fetch all entities from Supabase
+      const [documentsResult, useCasesResult, riskIndicatorsResult, featuresResult] = await Promise.all([
+        supabase.from('regulatory_documents').select('*'),
+        supabase.from('use_cases').select('*'),
+        supabase.from('risk_indicators').select('*'),
+        supabase.from('features').select('*')
+      ]);
 
-    // Create nodes for documents
-    documents.forEach((doc, index) => {
-      nodes.push({
-        id: `doc-${doc.id}`,
-        type: 'document',
-        position: this.getNodePosition(index, documents.length, 'document'),
-        data: {
-          label: doc.name,
-          entity: doc,
-          entityType: 'Document'
-        }
-      });
-    });
+      const documents = documentsResult.data || [];
+      const useCases = useCasesResult.data || [];
+      const riskIndicators = riskIndicatorsResult.data || [];
+      const features = featuresResult.data || [];
 
-    // Create nodes for use cases
-    useCases.forEach((uc, index) => {
-      nodes.push({
-        id: `uc-${uc.id}`,
-        type: 'usecase',
-        position: this.getNodePosition(index, useCases.length, 'usecase'),
-        data: {
-          label: uc.name,
-          entity: uc,
-          entityType: 'Use Case'
-        }
-      });
-    });
-
-    // Create nodes for risk indicators
-    riskIndicators.forEach((ri, index) => {
-      nodes.push({
-        id: `risk-${ri.id}`,
-        type: 'risk',
-        position: this.getNodePosition(index, riskIndicators.length, 'risk'),
-        data: {
-          label: ri.name,
-          entity: ri,
-          entityType: 'Risk Indicator'
-        }
-      });
-    });
-
-    // Create nodes for features
-    features.forEach((feature, index) => {
-      nodes.push({
-        id: `feature-${feature.id}`,
-        type: 'feature',
-        position: this.getNodePosition(index, features.length, 'feature'),
-        data: {
-          label: feature.name,
-          entity: feature,
-          entityType: 'Feature'
-        }
-      });
-    });
-
-    // Create edges for document-usecase relationships
-    documents.forEach(doc => {
-      const linkedUseCases = dataStore.getLinkedUseCasesForDocument(doc.id);
-      linkedUseCases.forEach(uc => {
-        edges.push({
-          id: `doc-${doc.id}-uc-${uc.id}`,
-          source: `doc-${doc.id}`,
-          target: `uc-${uc.id}`,
-          type: 'default'
+      // Create nodes for documents
+      documents.forEach((doc, index) => {
+        nodes.push({
+          id: `doc-${doc.id}`,
+          type: 'document',
+          position: this.getNodePosition(index, documents.length, 'document'),
+          data: {
+            label: doc.name,
+            entity: doc,
+            entityType: 'Document'
+          }
         });
       });
-    });
 
-    // Create edges for usecase-risk relationships
-    useCases.forEach(uc => {
-      const linkedRisks = dataStore.getLinkedRiskIndicatorsForUseCase(uc.id);
-      linkedRisks.forEach(risk => {
-        edges.push({
-          id: `uc-${uc.id}-risk-${risk.id}`,
-          source: `uc-${uc.id}`,
-          target: `risk-${risk.id}`,
-          type: 'default'
+      // Create nodes for use cases
+      useCases.forEach((uc, index) => {
+        nodes.push({
+          id: `uc-${uc.id}`,
+          type: 'usecase',
+          position: this.getNodePosition(index, useCases.length, 'usecase'),
+          data: {
+            label: uc.name,
+            entity: uc,
+            entityType: 'Use Case'
+          }
         });
       });
-    });
 
-    // Create edges for risk-feature relationships
-    riskIndicators.forEach(risk => {
-      const linkedFeatures = dataStore.getLinkedFeaturesForRiskIndicator(risk.id);
-      linkedFeatures.forEach(feature => {
-        edges.push({
-          id: `risk-${risk.id}-feature-${feature.id}`,
-          source: `risk-${risk.id}`,
-          target: `feature-${feature.id}`,
-          type: 'default'
+      // Create nodes for risk indicators
+      riskIndicators.forEach((ri, index) => {
+        nodes.push({
+          id: `risk-${ri.id}`,
+          type: 'risk',
+          position: this.getNodePosition(index, riskIndicators.length, 'risk'),
+          data: {
+            label: ri.name,
+            entity: ri,
+            entityType: 'Risk Indicator'
+          }
         });
       });
-    });
 
-    // Calculate dynamic handles
-    const nodeHandles = this.calculateDynamicHandles(nodes, edges);
+      // Create nodes for features
+      features.forEach((feature, index) => {
+        nodes.push({
+          id: `feature-${feature.id}`,
+          type: 'feature',
+          position: this.getNodePosition(index, features.length, 'feature'),
+          data: {
+            label: feature.name,
+            entity: feature,
+            entityType: 'Feature'
+          }
+        });
+      });
 
-    // Add dynamic handles to node data
-    nodes.forEach(node => {
-      const handles = nodeHandles.get(node.id);
-      if (handles && handles.length > 0) {
-        node.data.dynamicHandles = handles;
-      }
-    });
+      // For now, we'll create a simple graph without relationship links
+      // TODO: Implement relationship fetching when link tables are set up
+      
+      // Calculate dynamic handles
+      const nodeHandles = this.calculateDynamicHandles(nodes, edges);
 
-    return { nodes, edges };
+      // Add dynamic handles to node data
+      nodes.forEach(node => {
+        const handles = nodeHandles.get(node.id);
+        if (handles && handles.length > 0) {
+          node.data.dynamicHandles = handles;
+        }
+      });
+
+      return { nodes, edges };
+    } catch (error) {
+      console.error('Error fetching graph data:', error);
+      return { nodes: [], edges: [] };
+    }
   }
 
-  getConnectionStats() {
-    const documents = dataStore.getDocuments();
-    const useCases = dataStore.getUseCases();
-    const riskIndicators = dataStore.getRiskIndicators();
-    const features = dataStore.getFeatures();
+  async getConnectionStats() {
+    try {
+      const [documentsResult, useCasesResult, riskIndicatorsResult, featuresResult] = await Promise.all([
+        supabase.from('regulatory_documents').select('id', { count: 'exact', head: true }),
+        supabase.from('use_cases').select('id', { count: 'exact', head: true }),
+        supabase.from('risk_indicators').select('id', { count: 'exact', head: true }),
+        supabase.from('features').select('id', { count: 'exact', head: true })
+      ]);
 
-    const totalConnections = 
-      documents.reduce((acc, doc) => acc + dataStore.getLinkedUseCasesForDocument(doc.id).length, 0) +
-      useCases.reduce((acc, uc) => acc + dataStore.getLinkedRiskIndicatorsForUseCase(uc.id).length, 0) +
-      riskIndicators.reduce((acc, risk) => acc + dataStore.getLinkedFeaturesForRiskIndicator(risk.id).length, 0);
+      const documentCount = documentsResult.count || 0;
+      const useCaseCount = useCasesResult.count || 0;
+      const riskIndicatorCount = riskIndicatorsResult.count || 0;
+      const featureCount = featuresResult.count || 0;
 
-    return {
-      totalEntities: documents.length + useCases.length + riskIndicators.length + features.length,
-      totalConnections,
-      entityCounts: {
-        documents: documents.length,
-        useCases: useCases.length,
-        riskIndicators: riskIndicators.length,
-        features: features.length
-      }
-    };
+      return {
+        totalEntities: documentCount + useCaseCount + riskIndicatorCount + featureCount,
+        totalConnections: 0, // TODO: Calculate when relationship tables are implemented
+        entityCounts: {
+          documents: documentCount,
+          useCases: useCaseCount,
+          riskIndicators: riskIndicatorCount,
+          features: featureCount
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching connection stats:', error);
+      return {
+        totalEntities: 0,
+        totalConnections: 0,
+        entityCounts: {
+          documents: 0,
+          useCases: 0,
+          riskIndicators: 0,
+          features: 0
+        }
+      };
+    }
   }
 }
 

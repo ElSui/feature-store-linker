@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Cpu, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle } from 'lucide-react';
@@ -8,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { dataStore } from '@/store/dataStore';
 import Navigation from '@/components/Navigation';
 import Breadcrumb from '@/components/Breadcrumb';
 import RelationshipSection from '@/components/RelationshipSection';
@@ -444,24 +442,19 @@ const FeatureDetail = () => {
 const FeatureForm = ({ isEdit = false }: { isEdit?: boolean }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const existingFeature = isEdit ? dataStore.getFeature(Number(id)) : null;
 
   const [formData, setFormData] = useState({
-    name: existingFeature?.name || '',
-    type: existingFeature?.type || 'AI Model Feature' as 'AI Model Feature' | 'Simple Rule' | 'Calculation',
-    description: existingFeature?.description || '',
-    logic_summary: existingFeature?.logic_summary || ''
+    name: '',
+    type: 'AI Model Feature' as 'AI Model Feature' | 'Simple Rule' | 'Calculation',
+    description: '',
+    logic_summary: ''
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEdit && existingFeature) {
-      dataStore.updateFeature(existingFeature.id, formData);
-      navigate(`/features/${existingFeature.id}`);
-    } else {
-      const newFeature = dataStore.addFeature(formData);
-      navigate(`/features/${newFeature.id}`);
-    }
+    // TODO: Implement Supabase form submission
+    console.log('Form submission not yet implemented');
+    navigate('/features');
   };
 
   return (

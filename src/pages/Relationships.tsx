@@ -1,5 +1,5 @@
 
-import React, { useCallback, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ReactFlow,
@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { graphTransformer } from '@/store/graphUtils';
 import { NetworkAnalyzer } from '@/store/networkUtils';
-import { Search, Filter, ZoomIn, RotateCcw, X } from 'lucide-react';
+import { Search, Filter, ZoomIn, RotateCcw, X, LoaderCircle } from 'lucide-react';
 
 const nodeTypes = {
   document: GraphNode,
@@ -40,11 +40,44 @@ const Relationships = () => {
     risk: true,
     feature: true
   });
+  const [graphData, setGraphData] = useState<{ nodes: any[]; edges: any[] }>({ nodes: [], edges: [] });
+  const [stats, setStats] = useState({
+    totalEntities: 0,
+    totalConnections: 0,
+    entityCounts: {
+      documents: 0,
+      useCases: 0,
+      riskIndicators: 0,
+      features: 0
+    }
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Get graph data
-  const graphData = useMemo(() => graphTransformer.getGraphData(), []);
-  const stats = useMemo(() => graphTransformer.getConnectionStats(), []);
-  const networkAnalyzer = useMemo(() => new NetworkAnalyzer(graphData.nodes, graphData.edges), [graphData]);
+  // Fetch graph data on component mount
+  useEffect(() => {
+    const fetchGraphData = async () => {
+      setLoading(true);
+      try {
+        const [data, statsData] = await Promise.all([
+          graphTransformer.getGraphData(),
+          graphTransformer.getConnectionStats()
+        ]);
+        setGraphData(data);
+        setStats(statsData);
+      } catch (error) {
+        console.error('Error fetching graph data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGraphData();
+  }, []);
+
+  const networkAnalyzer = useMemo(() => {
+    if (graphData.nodes.length === 0) return null;
+    return new NetworkAnalyzer(graphData.nodes, graphData.edges);
+  }, [graphData]);
 
   // Move handleNodeHighlight before it's used in processedNodes
   const handleNodeHighlight = useCallback((nodeId: string) => {
@@ -54,6 +87,8 @@ const Relationships = () => {
 
   // Calculate network neighborhood based on search or highlighted nodes
   const networkNeighborhood = useMemo(() => {
+    if (!networkAnalyzer) return null;
+    
     if (searchTerm) {
       return networkAnalyzer.searchNetworkNeighborhood(searchTerm);
     } else if (highlightedNetwork.size > 0) {
@@ -165,6 +200,18 @@ const Relationships = () => {
     });
     setSelectedNodeId(null);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="flex justify-center items-center h-[calc(100vh-64px)]">
+          <LoaderCircle className="w-10 h-10 animate-spin text-blue-500" />
+          <p className="ml-4 text-lg text-gray-600">Loading Relationships...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
