@@ -29,27 +29,25 @@ export type Feature = {
   lookback_period: string;
 };
 
+// Helper function for consistent color mapping
+const getCategoryColor = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'geography': return 'bg-blue-100 text-blue-800';
+    case 'keywords': return 'bg-purple-100 text-purple-800';
+    case 'pseudo-customer': return 'bg-amber-100 text-amber-800';
+    case 'transaction': return 'bg-red-100 text-red-800';
+    case 'respondent': return 'bg-cyan-100 text-cyan-800';
+    case 'fintech': return 'bg-emerald-100 text-emerald-800';
+    case 'trade finance': return 'bg-indigo-100 text-indigo-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
 const FeaturesTable = ({ features, onDelete, onViewDetails }: { 
   features: Feature[]; 
   onDelete: (id: string) => void;
   onViewDetails: (id: string) => void;
 }) => {
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'AI Model Feature':
-      case 'Value':
-        return 'bg-blue-500 text-white';
-      case 'Simple Rule':
-      case 'Rule':
-        return 'bg-green-500 text-white';
-      case 'Calculation':
-      case 'Ratio':
-        return 'bg-orange-500 text-white';
-      default:
-        return 'bg-gray-500 text-white';
-    }
-  };
-
   return (
     <div className="rounded-md border">
       <Table>
@@ -65,14 +63,20 @@ const FeaturesTable = ({ features, onDelete, onViewDetails }: {
         </TableHeader>
         <TableBody>
           {features.map((feature) => (
-            <TableRow key={feature.id}>
+            <TableRow key={feature.id} className="hover:bg-muted/50">
               <TableCell className="font-mono text-sm">
                 <Badge variant="outline">{feature.unique_feature_id}</Badge>
               </TableCell>
               <TableCell className="font-medium">{feature.name}</TableCell>
-              <TableCell>{feature.category || 'Uncategorized'}</TableCell>
               <TableCell>
-                <Badge className={getTypeColor(feature.type)}>{feature.type}</Badge>
+                {feature.category ? (
+                  <Badge className={getCategoryColor(feature.category)}>{feature.category}</Badge>
+                ) : (
+                  <span className="text-gray-400">Uncategorized</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline">{feature.type}</Badge>
               </TableCell>
               <TableCell>
                 <div className="flex gap-1">

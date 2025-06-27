@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { AlertTriangle, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
@@ -26,6 +27,20 @@ export type RiskIndicator = {
   created_at: string;
 };
 
+// Helper function for consistent color mapping
+const getCategoryColor = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'geography': return 'bg-blue-100 text-blue-800';
+    case 'keywords': return 'bg-purple-100 text-purple-800';
+    case 'pseudo-customer': return 'bg-amber-100 text-amber-800';
+    case 'transaction': return 'bg-red-100 text-red-800';
+    case 'respondent': return 'bg-cyan-100 text-cyan-800';
+    case 'fintech': return 'bg-emerald-100 text-emerald-800';
+    case 'trade finance': return 'bg-indigo-100 text-indigo-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
 const RiskIndicatorsTable = ({ riskIndicators, handleViewDetails, handleDelete }: {
   riskIndicators: RiskIndicator[];
   handleViewDetails: (id: string) => void;
@@ -44,14 +59,14 @@ const RiskIndicatorsTable = ({ riskIndicators, handleViewDetails, handleDelete }
       </TableHeader>
       <TableBody>
         {riskIndicators.map((risk) => (
-          <TableRow key={risk.id}>
+          <TableRow key={risk.id} className="hover:bg-muted/50">
             <TableCell>
               <Badge variant="outline">{risk.unique_risk_id}</Badge>
             </TableCell>
             <TableCell className="font-medium">{risk.name}</TableCell>
             <TableCell>
               {risk.category ? (
-                <Badge variant="secondary">{risk.category}</Badge>
+                <Badge className={getCategoryColor(risk.category)}>{risk.category}</Badge>
               ) : (
                 <span className="text-gray-400">-</span>
               )}
@@ -66,6 +81,7 @@ const RiskIndicatorsTable = ({ riskIndicators, handleViewDetails, handleDelete }
                   size="sm"
                   onClick={() => handleViewDetails(risk.id)}
                 >
+                  <ExternalLink className="w-4 h-4 mr-1" />
                   View
                 </Button>
                 <Link to={`/risk-indicators/${risk.id}/edit`}>

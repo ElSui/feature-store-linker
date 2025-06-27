@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { Target, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +24,20 @@ export type UseCase = {
   created_at: string;
 };
 
+// Helper function for consistent color mapping
+const getCategoryColor = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'geography': return 'bg-blue-100 text-blue-800';
+    case 'keywords': return 'bg-purple-100 text-purple-800';
+    case 'pseudo-customer': return 'bg-amber-100 text-amber-800';
+    case 'transaction': return 'bg-red-100 text-red-800';
+    case 'respondent': return 'bg-cyan-100 text-cyan-800';
+    case 'fintech': return 'bg-emerald-100 text-emerald-800';
+    case 'trade finance': return 'bg-indigo-100 text-indigo-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
 const UseCasesTable = ({ useCases, handleViewDetails, handleDelete }: {
   useCases: UseCase[];
   handleViewDetails: (id: string) => void;
@@ -39,10 +55,14 @@ const UseCasesTable = ({ useCases, handleViewDetails, handleDelete }: {
       </TableHeader>
       <TableBody>
         {useCases.map((useCase) => (
-          <TableRow key={useCase.id}>
+          <TableRow key={useCase.id} className="hover:bg-muted/50">
             <TableCell className="font-medium">{useCase.name}</TableCell>
             <TableCell>
-              {useCase.business_area || <span className="text-gray-400">-</span>}
+              {useCase.business_area ? (
+                <Badge className={getCategoryColor(useCase.business_area)}>{useCase.business_area}</Badge>
+              ) : (
+                <span className="text-gray-400">-</span>
+              )}
             </TableCell>
             <TableCell>
               <div className="line-clamp-2 max-w-md">
@@ -56,6 +76,7 @@ const UseCasesTable = ({ useCases, handleViewDetails, handleDelete }: {
                   size="sm"
                   onClick={() => handleViewDetails(useCase.id)}
                 >
+                  <ExternalLink className="w-4 h-4 mr-1" />
                   View
                 </Button>
                 <Link to={`/use-cases/${useCase.id}/edit`}>

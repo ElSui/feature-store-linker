@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate, Routes, Route } from 'react-router-dom';
 import { FileText, Plus, Edit, Trash2, ExternalLink, LoaderCircle, AlertCircle, LayoutGrid, List } from 'lucide-react';
@@ -25,6 +26,24 @@ export type RegulatoryDocument = {
   created_at: string;
 };
 
+// Helper function for consistent color mapping (including publishers)
+const getCategoryColor = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'geography': return 'bg-blue-100 text-blue-800';
+    case 'keywords': return 'bg-purple-100 text-purple-800';
+    case 'pseudo-customer': return 'bg-amber-100 text-amber-800';
+    case 'transaction': return 'bg-red-100 text-red-800';
+    case 'respondent': return 'bg-cyan-100 text-cyan-800';
+    case 'fintech': return 'bg-emerald-100 text-emerald-800';
+    case 'trade finance': return 'bg-indigo-100 text-indigo-800';
+    case 'fatf': return 'bg-rose-100 text-rose-800';
+    case 'bis': return 'bg-violet-100 text-violet-800';
+    case 'fca': return 'bg-teal-100 text-teal-800';
+    case 'fed': return 'bg-orange-100 text-orange-800';
+    default: return 'bg-gray-100 text-gray-800';
+  }
+};
+
 const DocumentsTable = ({ documents, handleViewDetails, handleDelete }: {
   documents: RegulatoryDocument[];
   handleViewDetails: (id: string) => void;
@@ -43,11 +62,11 @@ const DocumentsTable = ({ documents, handleViewDetails, handleDelete }: {
       </TableHeader>
       <TableBody>
         {documents.map((document) => (
-          <TableRow key={document.id}>
+          <TableRow key={document.id} className="hover:bg-muted/50">
             <TableCell className="font-medium">{document.name}</TableCell>
             <TableCell>
               {document.publisher ? (
-                <Badge variant="secondary">{document.publisher}</Badge>
+                <Badge className={getCategoryColor(document.publisher)}>{document.publisher}</Badge>
               ) : (
                 <span className="text-gray-400">-</span>
               )}
@@ -72,6 +91,7 @@ const DocumentsTable = ({ documents, handleViewDetails, handleDelete }: {
                   size="sm"
                   onClick={() => handleViewDetails(document.id)}
                 >
+                  <ExternalLink className="w-4 h-4 mr-1" />
                   View
                 </Button>
                 <Link to={`/documents/${document.id}/edit`}>
