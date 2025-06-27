@@ -503,12 +503,12 @@ const FeatureDetail = () => {
             </Link>
           </div>
 
-          {/* Key Attributes Block */}
+          {/* Condensed Key Attributes Block */}
           <Card className="bg-white/80 backdrop-blur-sm border-gray-200">
             <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Feature ID</p>
+                  <span className="text-xs font-medium text-muted-foreground mr-2">ID:</span>
                   <Badge variant="outline" className="font-mono text-sm">
                     {feature.unique_feature_id}
                   </Badge>
@@ -516,7 +516,7 @@ const FeatureDetail = () => {
                 
                 {feature.category && (
                   <div>
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Category</p>
+                    <span className="text-xs font-medium text-muted-foreground mr-2">Category:</span>
                     <Badge className={getCategoryColor(feature.category)}>
                       {feature.category}
                     </Badge>
@@ -524,15 +524,15 @@ const FeatureDetail = () => {
                 )}
                 
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Type</p>
+                  <span className="text-xs font-medium text-muted-foreground mr-2">Type:</span>
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                     {feature.type}
                   </Badge>
                 </div>
                 
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Context</p>
-                  <div className="flex gap-2">
+                  <span className="text-xs font-medium text-muted-foreground mr-2">Context:</span>
+                  <div className="inline-flex gap-2">
                     {feature.is_pc && (
                       <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
                         PC
@@ -576,7 +576,7 @@ const FeatureDetail = () => {
 
                 {/* Logic Summary Section */}
                 <div className="mb-8">
-                  <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-3 mb-4 mt-4">
                     <Cpu className="w-5 h-5 text-purple-600" />
                     <h2 className="text-xl font-bold text-gray-900">Logic Summary</h2>
                   </div>
@@ -590,7 +590,7 @@ const FeatureDetail = () => {
                   <>
                     <Separator className="my-8" />
                     <div>
-                      <div className="flex items-center gap-3 mb-6">
+                      <div className="flex items-center gap-3 mb-6 mt-4">
                         <Settings2 className="w-5 h-5 text-orange-600" />
                         <h2 className="text-xl font-bold text-gray-900">Technical Details</h2>
                       </div>
