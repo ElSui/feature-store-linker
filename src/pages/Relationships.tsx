@@ -177,7 +177,7 @@ const Relationships = () => {
             id: `e-doc${l.document_id}-uc${l.use_case_id}`, 
             source: `doc-${l.document_id}`, 
             target: `uc-${l.use_case_id}`,
-            type: 'bezier',
+            type: 'smoothstep',
             animated: true,
             style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
@@ -185,7 +185,7 @@ const Relationships = () => {
             id: `e-uc${l.use_case_id}-risk${l.risk_indicator_id}`, 
             source: `uc-${l.use_case_id}`, 
             target: `risk-${l.risk_indicator_id}`,
-            type: 'bezier',
+            type: 'smoothstep',
             animated: true,
             style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
@@ -193,7 +193,7 @@ const Relationships = () => {
             id: `e-risk${l.risk_indicator_id}-feat${l.feature_id}`, 
             source: `risk-${l.risk_indicator_id}`, 
             target: `feat-${l.feature_id}`,
-            type: 'bezier',
+            type: 'smoothstep',
             animated: true,
             style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
