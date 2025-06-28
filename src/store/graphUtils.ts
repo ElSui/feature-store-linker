@@ -373,15 +373,45 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     g.setEdge(anchorNode, node.id);
   });
 
-  // Add all real edges between nodes
-  edges.forEach((edge) => {
+  // Step 4: Group children by parent and create invisible constraint edges
+  const childrenByParent = new Map<string, string[]>();
+  
+  // Group child node IDs by their parent node ID
+  edges.forEach(edge => {
+    if (!childrenByParent.has(edge.source)) {
+      childrenByParent.set(edge.source, []);
+    }
+    childrenByParent.get(edge.source)!.push(edge.target);
+  });
+
+  // Create invisible constraint edges between siblings
+  const allEdgesWithConstraints = [...edges];
+  childrenByParent.forEach((siblings) => {
+    if (siblings.length > 1) {
+      // Create invisible edges connecting siblings to keep them grouped
+      for (let i = 0; i < siblings.length - 1; i++) {
+        const invisibleEdge: Edge = {
+          id: `invisible-${siblings[i]}-${siblings[i + 1]}`,
+          source: siblings[i],
+          target: siblings[i + 1],
+          type: 'bezier',
+          style: { opacity: 0 },
+          animated: false
+        };
+        allEdgesWithConstraints.push(invisibleEdge);
+      }
+    }
+  });
+
+  // Add all edges (including invisible constraint edges) to dagre
+  allEdgesWithConstraints.forEach((edge) => {
     g.setEdge(edge.source, edge.target);
   });
 
   // Run the layout algorithm
   dagre.layout(g);
 
-  // Step 4: Extract only the real nodes with their calculated positions
+  // Step 5: Extract only the real nodes with their calculated positions
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = g.node(node.id);
     return {
@@ -393,6 +423,12 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     };
   });
 
-  // Return only the real elements (exclude invisible anchor nodes and edges)
-  return { nodes: layoutedNodes, edges };
+  // Update edge types to bezier for better aesthetics and return only real edges
+  const layoutedEdges = edges.map(edge => ({
+    ...edge,
+    type: 'bezier' as const
+  }));
+
+  // Return only the real elements (exclude invisible anchor nodes and constraint edges)
+  return { nodes: layoutedNodes, edges: layoutedEdges };
 };
