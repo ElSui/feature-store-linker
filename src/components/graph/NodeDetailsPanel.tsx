@@ -7,6 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, FileText, Target, AlertTriangle, Cpu } from 'lucide-react';
 import { Node } from '@xyflow/react';
 
+interface NodeData {
+  label: string;
+  entity: {
+    id: string;
+    [key: string]: any;
+  };
+  entityType: string;
+  [key: string]: any;
+}
+
 interface NodeDetailsPanelProps {
   selectedNode: Node | null;
   onClose: () => void;
@@ -16,6 +26,12 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ selectedNode, onClo
   const navigate = useNavigate();
 
   if (!selectedNode) return null;
+
+  // Type guard to ensure we have the expected data structure
+  const nodeData = selectedNode.data as NodeData;
+  if (!nodeData || !nodeData.entity || !nodeData.entity.id) {
+    return null;
+  }
 
   const getIcon = () => {
     const iconClass = "w-5 h-5";
@@ -34,7 +50,7 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ selectedNode, onClo
   };
 
   const getDetailPagePath = () => {
-    const entityId = selectedNode.data.entity.id;
+    const entityId = nodeData.entity.id;
     switch (selectedNode.type) {
       case 'document':
         return `/documents/${entityId}`;
@@ -62,7 +78,7 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ selectedNode, onClo
             <div className="flex items-center gap-2">
               {getIcon()}
               <CardTitle className="text-sm font-medium text-gray-600">
-                {selectedNode.data.entityType}
+                {nodeData.entityType}
               </CardTitle>
             </div>
             <Button
@@ -77,7 +93,7 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ selectedNode, onClo
         </CardHeader>
         <CardContent className="pt-0">
           <h3 className="font-semibold text-gray-900 mb-3 text-sm leading-tight">
-            {selectedNode.data.label}
+            {nodeData.label}
           </h3>
           <Button 
             onClick={handleViewDetails}
