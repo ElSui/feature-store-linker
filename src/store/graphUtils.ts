@@ -323,35 +323,16 @@ export const graphTransformer = new GraphDataTransformer();
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
 
+  // This is the new, complete body for the function.
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 }); // Generous spacing
   g.setDefaultEdgeLabel(() => ({}));
-
-  // Step A: Create Four Invisible Anchor Nodes
-  const ranks = ['RANK_DOCS', 'RANK_UC', 'RANK_RISKS', 'RANK_FEATURES'];
-  ranks.forEach(rankId => g.setNode(rankId, { width: 0, height: 0 }));
-
-  // Step B: Connect the Anchors to force the column order
-  g.setEdge(ranks[0], ranks[1], { style: { opacity: 0 } });
-  g.setEdge(ranks[1], ranks[2], { style: { opacity: 0 } });
-  g.setEdge(ranks[2], ranks[3], { style: { opacity: 0 } });
 
   const nodeWidth = 200;
   const nodeHeight = 70;
 
   nodes.forEach((node) => {
     g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-    
-    // Assign each node to its correct column anchor
-    if (node.type === 'document') {
-      g.setEdge('RANK_DOCS', node.id, { style: { opacity: 0 } });
-    } else if (node.type === 'usecase') {
-      g.setEdge('RANK_UC', node.id, { style: { opacity: 0 } });
-    } else if (node.type === 'risk') {
-      g.setEdge('RANK_RISKS', node.id, { style: { opacity: 0 } });
-    } else if (node.type === 'feature') {
-      g.setEdge('RANK_FEATURES', node.id, { style: { opacity: 0 } });
-    }
   });
 
   edges.forEach((edge) => {
