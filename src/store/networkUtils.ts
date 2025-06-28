@@ -1,5 +1,5 @@
 
-import { GraphNode, GraphEdge } from './graphUtils';
+import { Node, Edge } from '@xyflow/react';
 
 export interface NetworkNeighborhood {
   centerNodes: Set<string>;
@@ -8,18 +8,14 @@ export interface NetworkNeighborhood {
 }
 
 export class NetworkAnalyzer {
-  private nodes: GraphNode[];
-  private edges: GraphEdge[];
-
-  constructor(nodes: GraphNode[], edges: GraphEdge[]) {
-    this.nodes = nodes;
-    this.edges = edges;
+  constructor() {
+    // Constructor now takes no arguments - data will be passed to methods
   }
 
-  getDirectConnections(nodeId: string): Set<string> {
+  getDirectConnections(nodeId: string, edges: Edge[]): Set<string> {
     const connections = new Set<string>();
     
-    this.edges.forEach(edge => {
+    edges.forEach(edge => {
       if (edge.source === nodeId) {
         connections.add(edge.target);
       } else if (edge.target === nodeId) {
@@ -30,21 +26,21 @@ export class NetworkAnalyzer {
     return connections;
   }
 
-  getNetworkNeighborhood(centerNodeIds: string[]): NetworkNeighborhood {
+  getNetworkNeighborhood(centerNodeIds: string[], nodes: Node[], edges: Edge[]): NetworkNeighborhood {
     const centerNodes = new Set(centerNodeIds);
     const connectedNodes = new Set<string>();
     const relevantEdges = new Set<string>();
 
     // Find all directly connected nodes
     centerNodeIds.forEach(nodeId => {
-      const connections = this.getDirectConnections(nodeId);
+      const connections = this.getDirectConnections(nodeId, edges);
       connections.forEach(connectedId => connectedNodes.add(connectedId));
     });
 
     // Find all relevant edges (connecting center nodes or their connections)
     const allRelevantNodes = new Set([...centerNodes, ...connectedNodes]);
     
-    this.edges.forEach(edge => {
+    edges.forEach(edge => {
       if (allRelevantNodes.has(edge.source) && allRelevantNodes.has(edge.target)) {
         relevantEdges.add(edge.id);
       }
@@ -57,15 +53,44 @@ export class NetworkAnalyzer {
     };
   }
 
-  searchNetworkNeighborhood(searchTerm: string): NetworkNeighborhood {
+  findRelatedNodes(nodes: Node[], edges: Edge[], searchTerm: string): Node[] {
+    const matchingNodes = nodes.filter(node => 
+      node.data.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (matchingNodes.length === 0) return [];
+
+    const matchingNodeIds = matchingNodes.map(node => node.id);
+    const neighborhood = this.getNetworkNeighborhood(matchingNodeIds, nodes, edges);
+    
+    const allRelevantNodeIds = new Set([
+      ...neighborhood.centerNodes,
+      ...neighborhood.connectedNodes
+    ]);
+
+    return nodes.filter(node => allRelevantNodeIds.has(node.id));
+  }
+
+  findConnectedNodes(nodes: Node[], edges: Edge[], nodeId: string): Node[] {
+    const neighborhood = this.getNetworkNeighborhood([nodeId], nodes, edges);
+    
+    const allConnectedNodeIds = new Set([
+      ...neighborhood.centerNodes,
+      ...neighborhood.connectedNodes
+    ]);
+
+    return nodes.filter(node => allConnectedNodeIds.has(node.id));
+  }
+
+  searchNetworkNeighborhood(nodes: Node[], edges: Edge[], searchTerm: string): NetworkNeighborhood {
     const matchingNodeIds: string[] = [];
     
-    this.nodes.forEach(node => {
+    nodes.forEach(node => {
       if (node.data.label.toLowerCase().includes(searchTerm.toLowerCase())) {
         matchingNodeIds.push(node.id);
       }
     });
 
-    return this.getNetworkNeighborhood(matchingNodeIds);
+    return this.getNetworkNeighborhood(matchingNodeIds, nodes, edges);
   }
 }

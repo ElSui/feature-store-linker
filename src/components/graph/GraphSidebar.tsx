@@ -3,15 +3,17 @@ import React from 'react';
 import { Panel } from '@xyflow/react';
 import { Search, Filter } from 'lucide-react';
 
+interface VisibleTypes {
+  document: boolean;
+  usecase: boolean;
+  risk: boolean;
+  feature: boolean;
+}
+
 interface GraphSidebarProps {
   stats: { entities: number; connections: number };
-  visibleTypes: {
-    document: boolean;
-    usecase: boolean;
-    risk: boolean;
-    feature: boolean;
-  };
-  onTypeToggle: (type: keyof typeof visibleTypes) => void;
+  visibleTypes: VisibleTypes;
+  onTypeToggle: (type: keyof VisibleTypes) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
 }
