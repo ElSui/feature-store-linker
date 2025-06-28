@@ -5,6 +5,7 @@ import '@xyflow/react/dist/style.css';
 import Navigation from '@/components/Navigation';
 import GraphNode from '@/components/graph/GraphNode';
 import GraphSidebar from '@/components/graph/GraphSidebar';
+import NodeDetailsPanel from '@/components/graph/NodeDetailsPanel';
 import { getLayoutedElements } from '@/store/graphUtils';
 import { NetworkAnalyzer } from '@/store/networkUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +38,12 @@ const Relationships = () => {
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const networkAnalyzer = new NetworkAnalyzer();
+
+  // Get selected node data for the details panel
+  const selectedNode = useMemo(() => {
+    if (!selectedNodeId) return null;
+    return allNodes.find(node => node.id === selectedNodeId) || null;
+  }, [selectedNodeId, allNodes]);
 
   // Spotlight interaction logic
   const spotlightData = useMemo(() => {
@@ -316,6 +323,10 @@ const Relationships = () => {
     setSelectedNodeId(null);
   }, []);
 
+  const handleCloseDetailsPanel = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -364,6 +375,10 @@ const Relationships = () => {
             onTypeToggle={handleTypeToggle}
             searchTerm={searchTerm}
             onSearchChange={handleSearchChange}
+          />
+          <NodeDetailsPanel
+            selectedNode={selectedNode}
+            onClose={handleCloseDetailsPanel}
           />
         </ReactFlow>
       </div>
