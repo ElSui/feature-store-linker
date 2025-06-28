@@ -1,8 +1,8 @@
-
 import { Position } from '@xyflow/react';
 import { calculateOptimalHandlePosition } from '../utils/handleUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { Node, Edge } from '@xyflow/react';
+import dagre from 'dagre';
 
 // Define types based on our Supabase schema
 export interface RegulatoryDocument {
@@ -319,136 +319,36 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Custom hierarchical layout function with intelligent parent-child grouping
+// Custom hierarchical layout function with Dagre's built-in intelligence
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-  console.log('Starting custom layout with nodes:', nodes.length, 'edges:', edges.length);
+  console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
 
-  // Step A: Define Column Positions
-  const columnPositions = {
-    document: 0,
-    usecase: 350,
-    risk: 700,
-    feature: 1050
-  };
+  // This is the new, complete body for the function.
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 }); // Generous spacing
+  g.setDefaultEdgeLabel(() => ({}));
 
-  const nodeHeight = 80;
-  const verticalPadding = 120;
-  
-  // Step B: Group nodes by type
-  const nodesByType = {
-    document: nodes.filter(n => n.type === 'document'),
-    usecase: nodes.filter(n => n.type === 'usecase'),
-    risk: nodes.filter(n => n.type === 'risk'),
-    feature: nodes.filter(n => n.type === 'feature')
-  };
+  const nodeWidth = 200;
+  const nodeHeight = 70;
 
-  // Create a map for quick node lookup
-  const nodeMap = new Map<string, Node>();
-  nodes.forEach(node => nodeMap.set(node.id, node));
-
-  // Create parent-child relationships map
-  const childrenByParent = new Map<string, string[]>();
-  const parentsByChild = new Map<string, string[]>();
-  
-  edges.forEach(edge => {
-    // Add child to parent's children list
-    if (!childrenByParent.has(edge.source)) {
-      childrenByParent.set(edge.source, []);
-    }
-    childrenByParent.get(edge.source)!.push(edge.target);
-    
-    // Add parent to child's parents list
-    if (!parentsByChild.has(edge.target)) {
-      parentsByChild.set(edge.target, []);
-    }
-    parentsByChild.get(edge.target)!.push(edge.source);
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
-  const layoutedNodes: Node[] = [];
-
-  // Step C: Position nodes column by column
-  const columnOrder: (keyof typeof nodesByType)[] = ['document', 'usecase', 'risk', 'feature'];
-  const columnYPositions = new Map<string, number>();
-
-  columnOrder.forEach(columnType => {
-    const nodesInColumn = nodesByType[columnType];
-    const xPosition = columnPositions[columnType];
-    
-    console.log(`Processing column ${columnType} with ${nodesInColumn.length} nodes`);
-
-    if (columnType === 'document') {
-      // First column: simple vertical stacking
-      nodesInColumn.forEach((node, index) => {
-        const yPosition = index * verticalPadding;
-        layoutedNodes.push({
-          ...node,
-          position: { x: xPosition, y: yPosition }
-        });
-        columnYPositions.set(node.id, yPosition);
-      });
-    } else {
-      // Subsequent columns: position based on parent positions
-      const processedNodes = new Set<string>();
-      const usedYPositions = new Set<number>();
-
-      nodesInColumn.forEach(node => {
-        if (processedNodes.has(node.id)) return;
-
-        const parents = parentsByChild.get(node.id) || [];
-        let targetY = 0;
-
-        if (parents.length > 0) {
-          // Calculate average Y position of parents
-          const parentYPositions = parents
-            .map(parentId => columnYPositions.get(parentId))
-            .filter(y => y !== undefined) as number[];
-          
-          if (parentYPositions.length > 0) {
-            targetY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
-          }
-        } else {
-          // No parents, place at next available position
-          targetY = layoutedNodes.length * verticalPadding;
-        }
-
-        // Handle collisions: ensure nodes don't overlap
-        while (usedYPositions.has(targetY)) {
-          targetY += verticalPadding;
-        }
-
-        // If we have siblings (nodes with the same parent), group them together
-        const siblings = parents.length > 0 ? 
-          parents.flatMap(parentId => childrenByParent.get(parentId) || [])
-            .filter(siblingId => {
-              const siblingNode = nodeMap.get(siblingId);
-              return siblingNode && siblingNode.type === columnType && !processedNodes.has(siblingId);
-            }) : [node.id];
-
-        // Position this node and its siblings
-        siblings.forEach((siblingId, siblingIndex) => {
-          if (processedNodes.has(siblingId)) return;
-          
-          const siblingNode = nodeMap.get(siblingId);
-          if (!siblingNode) return;
-
-          const siblingY = targetY + (siblingIndex * verticalPadding);
-          
-          layoutedNodes.push({
-            ...siblingNode,
-            position: { x: xPosition, y: siblingY }
-          });
-          
-          columnYPositions.set(siblingId, siblingY);
-          usedYPositions.add(siblingY);
-          processedNodes.add(siblingId);
-          
-          console.log(`Positioned ${siblingId} at (${xPosition}, ${siblingY})`);
-        });
-      });
-    }
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
   });
 
-  console.log('Layout complete. Positioned nodes:', layoutedNodes.length);
-  
+  dagre.layout(g);
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = g.node(node.id);
+    node.position = {
+      x: nodeWithPosition.x - nodeWidth / 2,
+      y: nodeWithPosition.y - nodeHeight / 2,
+    };
+    return node;
+  });
+
   return { nodes: layoutedNodes, edges };
 };
