@@ -25,7 +25,7 @@ interface GraphNodeProps {
 
 const GraphNode = memo(({ data, type, id }: GraphNodeProps) => {
   const getNodeStyle = () => {
-    const baseStyle = "p-3 rounded-lg border-2 shadow-lg min-w-[150px] max-w-[250px] text-center text-sm font-medium cursor-pointer transition-all duration-200 hover:shadow-xl relative";
+    const baseStyle = "p-3 rounded-lg border-2 shadow-md min-w-[150px] max-w-[250px] text-center text-sm font-medium cursor-pointer transition-all duration-200 hover:shadow-xl relative";
     
     let colorClasses = "";
     switch (type) {

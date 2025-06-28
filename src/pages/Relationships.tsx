@@ -179,7 +179,7 @@ const Relationships = () => {
             target: `uc-${l.use_case_id}`,
             type: 'smoothstep',
             animated: true,
-            style: { stroke: '#a1a1aa', strokeWidth: 2 }
+            style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
           ...(useCaseRiskLinks || []).map(l => ({ 
             id: `e-uc${l.use_case_id}-risk${l.risk_indicator_id}`, 
@@ -187,7 +187,7 @@ const Relationships = () => {
             target: `risk-${l.risk_indicator_id}`,
             type: 'smoothstep',
             animated: true,
-            style: { stroke: '#a1a1aa', strokeWidth: 2 }
+            style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
           ...(riskFeatureLinks || []).map(l => ({ 
             id: `e-risk${l.risk_indicator_id}-feat${l.feature_id}`, 
@@ -195,7 +195,7 @@ const Relationships = () => {
             target: `feat-${l.feature_id}`,
             type: 'smoothstep',
             animated: true,
-            style: { stroke: '#a1a1aa', strokeWidth: 2 }
+            style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
         ];
 

@@ -322,7 +322,7 @@ export const graphTransformer = new GraphDataTransformer();
 // Intelligent hierarchical layout function with invisible anchor nodes for strict columnar positioning
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', align: 'UL', nodesep: 25, ranksep: 180 });
+  g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 180 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 150;
