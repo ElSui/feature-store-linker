@@ -55,6 +55,7 @@ export class NetworkAnalyzer {
 
   findRelatedNodes(nodes: Node[], edges: Edge[], searchTerm: string): Node[] {
     const matchingNodes = nodes.filter(node => 
+      node.data.label && typeof node.data.label === 'string' && 
       node.data.label.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -86,7 +87,8 @@ export class NetworkAnalyzer {
     const matchingNodeIds: string[] = [];
     
     nodes.forEach(node => {
-      if (node.data.label.toLowerCase().includes(searchTerm.toLowerCase())) {
+      if (node.data.label && typeof node.data.label === 'string' && 
+          node.data.label.toLowerCase().includes(searchTerm.toLowerCase())) {
         matchingNodeIds.push(node.id);
       }
     });
