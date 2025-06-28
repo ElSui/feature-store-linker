@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ReactFlow, Controls, Background, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -177,7 +178,7 @@ const Relationships = () => {
             id: `e-doc${l.document_id}-uc${l.use_case_id}`, 
             source: `doc-${l.document_id}`, 
             target: `uc-${l.use_case_id}`,
-            type: 'smoothstep',
+            type: 'bezier',
             animated: true,
             style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
@@ -185,7 +186,7 @@ const Relationships = () => {
             id: `e-uc${l.use_case_id}-risk${l.risk_indicator_id}`, 
             source: `uc-${l.use_case_id}`, 
             target: `risk-${l.risk_indicator_id}`,
-            type: 'smoothstep',
+            type: 'bezier',
             animated: true,
             style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
@@ -193,7 +194,7 @@ const Relationships = () => {
             id: `e-risk${l.risk_indicator_id}-feat${l.feature_id}`, 
             source: `risk-${l.risk_indicator_id}`, 
             target: `feat-${l.feature_id}`,
-            type: 'smoothstep',
+            type: 'bezier',
             animated: true,
             style: { stroke: '#a1a1aa', strokeWidth: 1.5 }
           })),
@@ -349,6 +350,7 @@ const Relationships = () => {
           edges={edges}
           nodeTypes={nodeTypes}
           nodesDraggable={true}
+          minZoom={0.1}
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
           fitView
