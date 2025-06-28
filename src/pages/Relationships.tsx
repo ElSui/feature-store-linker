@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ReactFlow, Controls, Background, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -35,9 +34,27 @@ const Relationships = () => {
     feature: true,
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
 
   const networkAnalyzer = new NetworkAnalyzer();
+
+  // Spotlight interaction logic
+  const spotlightData = useMemo(() => {
+    if (!selectedNodeId) {
+      return null;
+    }
+
+    const neighborhood = networkAnalyzer.getNetworkNeighborhood([selectedNodeId], allNodes, allEdges);
+    const connectedNodeIds = new Set([
+      ...neighborhood.centerNodes,
+      ...neighborhood.connectedNodes
+    ]);
+
+    return {
+      highlightedNodes: connectedNodeIds,
+      relevantEdges: neighborhood.relevantEdges
+    };
+  }, [selectedNodeId, allNodes, allEdges, networkAnalyzer]);
 
   // Calculate search highlights using useMemo
   const searchHighlights = useMemo(() => {
@@ -199,7 +216,7 @@ const Relationships = () => {
     fetchData();
   }, []);
 
-  // Update visible nodes and edges based on filters and search
+  // Update visible nodes and edges based on filters, search, and spotlight
   useEffect(() => {
     let filteredNodes = allNodes.filter(node => 
       visibleTypes[node.type as keyof typeof visibleTypes]
@@ -213,9 +230,26 @@ const Relationships = () => {
              visibleTypes[targetNode.type as keyof typeof visibleTypes];
     });
 
-    // Apply search highlighting
-    if (searchHighlights) {
-      // Update node data with highlight/dim state
+    // Apply spotlight interaction
+    if (spotlightData) {
+      // Apply spotlight effect - dim non-connected nodes and edges
+      filteredNodes = filteredNodes.map(node => ({
+        ...node,
+        style: {
+          ...node.style,
+          opacity: spotlightData.highlightedNodes.has(node.id) ? 1 : 0.2
+        }
+      }));
+
+      filteredEdges = filteredEdges.map(edge => ({
+        ...edge,
+        style: {
+          ...edge.style,
+          opacity: spotlightData.relevantEdges.has(edge.id) ? 1 : 0.1
+        }
+      }));
+    } else if (searchHighlights) {
+      // Apply search highlighting
       filteredNodes = filteredNodes.map(node => ({
         ...node,
         data: {
@@ -225,13 +259,25 @@ const Relationships = () => {
         }
       }));
     } else {
-      // Reset highlight states
+      // Reset all visual states
       filteredNodes = filteredNodes.map(node => ({
         ...node,
         data: {
           ...node.data,
           isHighlighted: false,
           isDimmed: false
+        },
+        style: {
+          ...node.style,
+          opacity: 1
+        }
+      }));
+
+      filteredEdges = filteredEdges.map(edge => ({
+        ...edge,
+        style: {
+          ...edge.style,
+          opacity: 1
         }
       }));
     }
@@ -243,7 +289,7 @@ const Relationships = () => {
     
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-  }, [allNodes, allEdges, visibleTypes, searchHighlights]);
+  }, [allNodes, allEdges, visibleTypes, searchHighlights, spotlightData]);
 
   const handleTypeToggle = useCallback((type: keyof typeof visibleTypes) => {
     setVisibleTypes(prev => ({
@@ -254,13 +300,21 @@ const Relationships = () => {
 
   const handleSearchChange = useCallback((term: string) => {
     setSearchTerm(term);
+    setSelectedNodeId(null); // Clear selection when searching
   }, []);
 
   const handleNodeHighlight = useCallback((nodeId: string) => {
-    const relatedNodes = networkAnalyzer.findConnectedNodes(allNodes, allEdges, nodeId);
-    setHighlightedNodes(new Set(relatedNodes.map(node => node.id)));
+    setSelectedNodeId(nodeId);
     setSearchTerm(''); // Clear search when manually highlighting
-  }, [allNodes, allEdges, networkAnalyzer]);
+  }, []);
+
+  const handleNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    setSelectedNodeId(node.id);
+  }, []);
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, []);
 
   if (loading) {
     return (
@@ -295,6 +349,8 @@ const Relationships = () => {
           edges={edges}
           nodeTypes={nodeTypes}
           nodesDraggable={true}
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
           fitView
           className="bg-gray-50"
           style={{ width: '100%', height: '100%' }}

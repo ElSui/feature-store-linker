@@ -80,7 +80,7 @@ const GraphNode = memo(({ data, type, id }: GraphNodeProps) => {
 
   return (
     <div className={getNodeStyle()}>
-      {/* Left-to-right handles only */}
+      {/* Strict left-to-right handles only */}
       <Handle type="target" position={Position.Left} className="w-2 h-2" />
       <Handle type="source" position={Position.Right} className="w-2 h-2" />
       

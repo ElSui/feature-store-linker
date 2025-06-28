@@ -319,17 +319,35 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Updated layout function with improved spacing
+// Intelligent hierarchical layout function with rank-based positioning
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 220 }); // Improved spacing values
+  g.setGraph({ rankdir: 'LR', align: 'UL', nodesep: 30, ranksep: 200 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 150;
   const nodeHeight = 60;
 
+  // Assign ranks based on node type for strict hierarchy
   nodes.forEach((node) => {
-    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    let rank = 0;
+    
+    // Determine rank based on node type
+    if (node.type === 'document') {
+      rank = 0; // Column 0 - Documents (leftmost)
+    } else if (node.type === 'usecase') {
+      rank = 1; // Column 1 - Use Cases
+    } else if (node.type === 'risk') {
+      rank = 2; // Column 2 - Risk Indicators
+    } else if (node.type === 'feature') {
+      rank = 3; // Column 3 - Features (rightmost)
+    }
+    
+    g.setNode(node.id, { 
+      width: nodeWidth, 
+      height: nodeHeight,
+      rank: rank 
+    });
   });
 
   edges.forEach((edge) => {
