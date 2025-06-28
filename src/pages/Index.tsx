@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network, LoaderCircle } from 'lucide-react';
+import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network, LoaderCircle, Sparkles, TrendingUp, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -45,121 +45,148 @@ const Dashboard = () => {
   const entities = [
     {
       name: 'Regulatory Documents',
-      description: 'Manage compliance documents and regulations',
+      description: 'Centralized compliance documentation',
       icon: FileText,
       count: entityStats.documents,
       path: '/documents',
-      color: 'bg-blue-500'
+      gradient: 'from-blue-500 to-cyan-500',
+      bgGradient: 'from-blue-50 to-cyan-50'
     },
     {
       name: 'Use Cases',
-      description: 'Define business use cases and scenarios',
+      description: 'Business scenarios & applications',
       icon: Target,
       count: entityStats.useCases,
       path: '/use-cases',
-      color: 'bg-emerald-500'
+      gradient: 'from-emerald-500 to-teal-500',
+      bgGradient: 'from-emerald-50 to-teal-50'
     },
     {
       name: 'Risk Indicators',
-      description: 'Identify and categorize risk factors',
+      description: 'Compliance risk assessment',
       icon: AlertTriangle,
       count: entityStats.riskIndicators,
       path: '/risk-indicators',
-      color: 'bg-amber-500'
+      gradient: 'from-amber-500 to-orange-500',
+      bgGradient: 'from-amber-50 to-orange-50'
     },
     {
       name: 'Features',
-      description: 'Manage AI models, rules and calculations',
+      description: 'AI models & business rules',
       icon: Cpu,
       count: entityStats.features,
       path: '/features',
-      color: 'bg-purple-500'
+      gradient: 'from-purple-500 to-indigo-500',
+      bgGradient: 'from-purple-50 to-indigo-50'
     }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <header className="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200/50 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Compliance Linker</h1>
-              <p className="text-gray-600 mt-2">Manage regulatory relationships and compliance entities</p>
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-indigo-800 bg-clip-text text-transparent">
+                  Nexus
+                </h1>
+                <p className="text-gray-600 mt-1 text-lg">Intelligent Compliance Management</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <Link to="/relationships">
-                <Button variant="outline">
+                <Button variant="outline" className="border-purple-200 hover:bg-purple-50 text-purple-700">
                   <Network className="mr-2 h-4 w-4" />
-                  View Graph
+                  Explore Graph
                 </Button>
               </Link>
-              <Button variant="outline">Settings</Button>
-              <Button>Export Data</Button>
+              <Button variant="outline" className="hover:bg-gray-50">
+                Settings
+              </Button>
+              <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-lg">
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Export Data
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Dashboard Overview</h2>
-          <p className="text-gray-600 max-w-3xl">
-            Welcome to the Compliance Linker Tool. Manage your regulatory documents, use cases, risk indicators, 
-            and features while maintaining complex many-to-many relationships between entities.
+        <div className="text-center mb-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            Welcome to Your Compliance Command Center
+          </h2>
+          <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
+            Streamline regulatory compliance with intelligent document management, 
+            risk assessment, and relationship mapping—all in one unified platform.
           </p>
         </div>
 
         {/* Graph View Highlight */}
-        <div className="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+        <div className="mb-16 bg-gradient-to-r from-purple-500/10 via-indigo-500/10 to-blue-500/10 rounded-3xl p-8 border border-purple-200/50 shadow-lg backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
-                <Network className="mr-2 h-5 w-5 text-purple-600" />
-                Relationship Graph
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Visualize the interconnected network of compliance entities and their relationships in an interactive graph.
-              </p>
+            <div className="flex items-start space-x-4">
+              <div className="p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg">
+                <Network className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                  Interactive Relationship Graph
+                </h3>
+                <p className="text-gray-700 mb-6 text-lg leading-relaxed">
+                  Discover hidden connections and visualize the complex web of compliance relationships 
+                  with our dynamic, interactive network visualization.
+                </p>
+                <Link to="/relationships">
+                  <Button size="lg" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg">
+                    <Zap className="mr-2 h-5 w-5" />
+                    Launch Graph Explorer
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <Link to="/relationships">
-              <Button className="bg-purple-600 hover:bg-purple-700">
-                Explore Graph
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
           </div>
         </div>
 
         {/* Entity Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8 mb-16">
           {entities.map((entity, index) => {
             const IconComponent = entity.icon;
             return (
-              <Card key={index} className="hover:shadow-lg transition-all duration-200 border-0 shadow-sm">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className={`p-3 rounded-lg ${entity.color}`}>
-                      <IconComponent className="h-6 w-6 text-white" />
+              <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 shadow-lg bg-white/80 backdrop-blur-sm hover:-translate-y-1 flex flex-col h-full">
+                <CardHeader className="pb-4 flex-shrink-0">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`p-4 rounded-2xl bg-gradient-to-br ${entity.gradient} shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
+                      <IconComponent className="h-8 w-8 text-white" />
                     </div>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {loading ? (
-                        <LoaderCircle className="w-6 h-6 animate-spin" />
-                      ) : (
-                        entity.count
-                      )}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-3xl font-bold text-gray-900 block">
+                        {loading ? (
+                          <LoaderCircle className="w-8 h-8 animate-spin mx-auto" />
+                        ) : (
+                          entity.count
+                        )}
+                      </span>
+                      <span className="text-sm text-gray-500 uppercase tracking-wide">Items</span>
+                    </div>
                   </div>
+                  <CardTitle className="text-xl mb-2 text-gray-900">{entity.name}</CardTitle>
+                  <CardDescription className="text-gray-600 text-base">{entity.description}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <CardTitle className="text-lg mb-2">{entity.name}</CardTitle>
-                  <CardDescription className="mb-4">{entity.description}</CardDescription>
-                  <Link to={entity.path}>
-                    <Button className="w-full group">
-                      Manage
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                <CardContent className="flex-grow flex flex-col justify-end pt-0">
+                  <Link to={entity.path} className="w-full">
+                    <Button className="w-full bg-gradient-to-r from-gray-900 to-gray-700 hover:from-gray-800 hover:to-gray-600 shadow-lg group">
+                      <span className="mr-2">Explore Collection</span>
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
                     </Button>
                   </Link>
                 </CardContent>
@@ -169,60 +196,68 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-200/50 p-8 mb-12">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link to="/documents/new">
-              <Button variant="outline" className="w-full justify-start">
-                <FileText className="mr-2 h-4 w-4" />
-                New Document
+              <Button variant="outline" className="w-full justify-start h-14 text-left hover:bg-blue-50 border-blue-200 hover:border-blue-300 group">
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg mr-3 group-hover:shadow-md transition-shadow">
+                  <FileText className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-medium">New Document</span>
               </Button>
             </Link>
             <Link to="/use-cases/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Target className="mr-2 h-4 w-4" />
-                New Use Case
+              <Button variant="outline" className="w-full justify-start h-14 text-left hover:bg-emerald-50 border-emerald-200 hover:border-emerald-300 group">
+                <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg mr-3 group-hover:shadow-md transition-shadow">
+                  <Target className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-medium">New Use Case</span>
               </Button>
             </Link>
             <Link to="/risk-indicators/new">
-              <Button variant="outline" className="w-full justify-start">
-                <AlertTriangle className="mr-2 h-4 w-4" />
-                New Risk Indicator
+              <Button variant="outline" className="w-full justify-start h-14 text-left hover:bg-amber-50 border-amber-200 hover:border-amber-300 group">
+                <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg mr-3 group-hover:shadow-md transition-shadow">
+                  <AlertTriangle className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-medium">New Risk Indicator</span>
               </Button>
             </Link>
             <Link to="/features/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Cpu className="mr-2 h-4 w-4" />
-                New Feature
+              <Button variant="outline" className="w-full justify-start h-14 text-left hover:bg-purple-50 border-purple-200 hover:border-purple-300 group">
+                <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-lg mr-3 group-hover:shadow-md transition-shadow">
+                  <Cpu className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-medium">New Feature</span>
               </Button>
             </Link>
           </div>
         </div>
 
         {/* Recent Activity */}
-        <div className="mt-8 bg-white rounded-lg shadow-sm border p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <span className="text-gray-900">Connected to live Supabase database</span>
+        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-200/50 p-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">System Status</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-100">
+              <div className="flex items-center space-x-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-900 font-medium">Connected to live Supabase database</span>
               </div>
-              <span className="text-sm text-gray-500">Just now</span>
+              <span className="text-sm text-gray-500 bg-white/70 px-3 py-1 rounded-full">Active</span>
             </div>
-            <div className="flex items-center justify-between py-2 border-b border-gray-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-gray-900">All pages now display live data from database</span>
+            <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
+              <div className="flex items-center space-x-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+                <span className="text-gray-900 font-medium">Real-time data synchronization enabled</span>
               </div>
-              <span className="text-sm text-gray-500">Just now</span>
+              <span className="text-sm text-gray-500 bg-white/70 px-3 py-1 rounded-full">Operational</span>
             </div>
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <span className="text-gray-900">Mock data store successfully replaced</span>
+            <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
+              <div className="flex items-center space-x-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"></div>
+                <span className="text-gray-900 font-medium">Graph visualization ready for exploration</span>
               </div>
-              <span className="text-sm text-gray-500">Just now</span>
+              <span className="text-sm text-gray-500 bg-white/70 px-3 py-1 rounded-full">Ready</span>
             </div>
           </div>
         </div>
