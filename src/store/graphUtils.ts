@@ -323,7 +323,6 @@ export const graphTransformer = new GraphDataTransformer();
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
 
-  // This is the new, complete body for the function.
   const g = new dagre.graphlib.Graph();
   g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 }); // Generous spacing
   g.setDefaultEdgeLabel(() => ({}));
@@ -331,10 +330,34 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const nodeWidth = 200;
   const nodeHeight = 70;
 
-  nodes.forEach((node) => {
-    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  // Create invisible rank anchor nodes to enforce column hierarchy
+  const rankAnchors = ['RANK_0', 'RANK_1', 'RANK_2', 'RANK_3'];
+  rankAnchors.forEach(id => {
+    g.setNode(id, { width: 1, height: 1 }); // Minimal size invisible nodes
   });
 
+  // Create invisible spine to enforce column order
+  g.setEdge('RANK_0', 'RANK_1');
+  g.setEdge('RANK_1', 'RANK_2');
+  g.setEdge('RANK_2', 'RANK_3');
+
+  // Add real nodes and assign them to their correct rank anchors
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    
+    // Connect each node type to its corresponding rank anchor
+    if (node.type === 'document') {
+      g.setEdge('RANK_0', node.id);
+    } else if (node.type === 'usecase') {
+      g.setEdge('RANK_1', node.id);
+    } else if (node.type === 'risk') {
+      g.setEdge('RANK_2', node.id);
+    } else if (node.type === 'feature') {
+      g.setEdge('RANK_3', node.id);
+    }
+  });
+
+  // Add the real edges
   edges.forEach((edge) => {
     g.setEdge(edge.source, edge.target);
   });
