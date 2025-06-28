@@ -319,10 +319,10 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Add this new function for Dagre layouting
+// Updated layout function with improved spacing
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 250 }); // Updated spacing values
+  g.setGraph({ rankdir: 'LR', nodesep: 40, ranksep: 220 }); // Improved spacing values
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 150;

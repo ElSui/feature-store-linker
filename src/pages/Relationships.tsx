@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { ReactFlow, Controls, Background, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -38,6 +38,28 @@ const Relationships = () => {
   const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
 
   const networkAnalyzer = new NetworkAnalyzer();
+
+  // Calculate search highlights using useMemo
+  const searchHighlights = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return null;
+    }
+
+    const matchingNodes = allNodes.filter(node => 
+      node.data.label && typeof node.data.label === 'string' && 
+      node.data.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (matchingNodes.length === 0) return null;
+
+    const matchingNodeIds = matchingNodes.map(node => node.id);
+    const neighborhood = networkAnalyzer.getNetworkNeighborhood(matchingNodeIds, allNodes, allEdges);
+    
+    return {
+      highlightedNodes: new Set([...neighborhood.centerNodes, ...neighborhood.connectedNodes]),
+      relevantEdges: neighborhood.relevantEdges
+    };
+  }, [searchTerm, allNodes, allEdges, networkAnalyzer]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -192,21 +214,17 @@ const Relationships = () => {
     });
 
     // Apply search highlighting
-    if (searchTerm) {
-      const searchResults = networkAnalyzer.findRelatedNodes(allNodes, allEdges, searchTerm);
-      setHighlightedNodes(new Set(searchResults.map(node => node.id)));
-      
+    if (searchHighlights) {
       // Update node data with highlight/dim state
       filteredNodes = filteredNodes.map(node => ({
         ...node,
         data: {
           ...node.data,
-          isHighlighted: searchResults.some(r => r.id === node.id),
-          isDimmed: !searchResults.some(r => r.id === node.id) && searchResults.length > 0
+          isHighlighted: searchHighlights.highlightedNodes.has(node.id),
+          isDimmed: !searchHighlights.highlightedNodes.has(node.id)
         }
       }));
     } else {
-      setHighlightedNodes(new Set());
       // Reset highlight states
       filteredNodes = filteredNodes.map(node => ({
         ...node,
@@ -225,7 +243,7 @@ const Relationships = () => {
     
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
-  }, [allNodes, allEdges, visibleTypes, searchTerm, networkAnalyzer]);
+  }, [allNodes, allEdges, visibleTypes, searchHighlights]);
 
   const handleTypeToggle = useCallback((type: keyof typeof visibleTypes) => {
     setVisibleTypes(prev => ({
@@ -276,6 +294,7 @@ const Relationships = () => {
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
+          nodesDraggable={true}
           fitView
           className="bg-gray-50"
           style={{ width: '100%', height: '100%' }}
