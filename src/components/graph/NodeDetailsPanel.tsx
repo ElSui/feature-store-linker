@@ -5,17 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { X, FileText, Target, AlertTriangle, Cpu } from 'lucide-react';
+import { Node } from '@xyflow/react';
 
 interface NodeDetailsPanelProps {
-  selectedNode: {
-    id: string;
-    type: 'document' | 'usecase' | 'risk' | 'feature';
-    data: {
-      label: string;
-      entity: any;
-      entityType: string;
-    };
-  } | null;
+  selectedNode: Node | null;
   onClose: () => void;
 }
 
@@ -44,13 +37,13 @@ const NodeDetailsPanel: React.FC<NodeDetailsPanelProps> = ({ selectedNode, onClo
     const entityId = selectedNode.data.entity.id;
     switch (selectedNode.type) {
       case 'document':
-        return `/documents`;
+        return `/documents/${entityId}`;
       case 'usecase':
-        return `/use-cases`;
+        return `/use-cases/${entityId}`;
       case 'risk':
-        return `/risk-indicators`;
+        return `/risk-indicators/${entityId}`;
       case 'feature':
-        return `/features`;
+        return `/features/${entityId}`;
       default:
         return '/';
     }
