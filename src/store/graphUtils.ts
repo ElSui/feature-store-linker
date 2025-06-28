@@ -319,36 +319,114 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Custom hierarchical layout function with Dagre's built-in intelligence
+// Custom hierarchical layout function with hybrid approach
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-  console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
+  console.log('Starting hybrid layout with nodes:', nodes.length, 'edges:', edges.length);
 
-  // This is the new, complete body for the function.
+  // Phase 1: Use Dagre for optimal grouping and spacing
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 }); // Generous spacing
+  g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 200;
   const nodeHeight = 70;
 
+  // Add all nodes to Dagre
   nodes.forEach((node) => {
     g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
+  // Add all edges to Dagre
   edges.forEach((edge) => {
     g.setEdge(edge.source, edge.target);
   });
 
+  // Let Dagre calculate the initial layout with good spacing
   dagre.layout(g);
 
-  const layoutedNodes = nodes.map((node) => {
+  // Phase 2: Extract Dagre's positioning and enforce column structure
+  const dagrePositions = new Map<string, { x: number; y: number }>();
+  nodes.forEach((node) => {
     const nodeWithPosition = g.node(node.id);
-    node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
-    };
+    dagrePositions.set(node.id, {
+      x: nodeWithPosition.x,
+      y: nodeWithPosition.y
+    });
+  });
+
+  // Define strict column positions
+  const COLUMN_POSITIONS = {
+    document: 200,   // Column 1
+    usecase: 500,    // Column 2  
+    risk: 800,       // Column 3
+    feature: 1100    // Column 4
+  };
+
+  // Group nodes by type and preserve their Dagre-calculated vertical relationships
+  const nodesByType: { [key: string]: Array<{ node: Node; dagreY: number }> } = {
+    document: [],
+    usecase: [],
+    risk: [],
+    feature: []
+  };
+
+  nodes.forEach((node) => {
+    const dagrePos = dagrePositions.get(node.id);
+    if (dagrePos && nodesByType[node.type]) {
+      nodesByType[node.type].push({
+        node,
+        dagreY: dagrePos.y
+      });
+    }
+  });
+
+  // Sort each column by Dagre's Y position to maintain relative ordering
+  Object.keys(nodesByType).forEach(type => {
+    nodesByType[type].sort((a, b) => a.dagreY - b.dagreY);
+  });
+
+  // Phase 3: Apply strict column positioning while preserving vertical grouping
+  const finalPositions = new Map<string, { x: number; y: number }>();
+
+  Object.entries(nodesByType).forEach(([type, nodesInType]) => {
+    const columnX = COLUMN_POSITIONS[type as keyof typeof COLUMN_POSITIONS];
+    
+    if (nodesInType.length === 0) return;
+
+    // Calculate the center point of this column's nodes based on Dagre's spacing
+    const dagreYValues = nodesInType.map(item => item.dagreY);
+    const minY = Math.min(...dagreYValues);
+    const maxY = Math.max(...dagreYValues);
+    const centerY = (minY + maxY) / 2;
+
+    // Position nodes in this column, maintaining their relative spacing from Dagre
+    nodesInType.forEach((item, index) => {
+      // Preserve the relative offset from Dagre's center calculation
+      const relativeOffset = item.dagreY - centerY;
+      
+      // Apply the offset to create natural grouping
+      const finalY = 400 + relativeOffset; // 400 is our baseline center
+      
+      finalPositions.set(item.node.id, {
+        x: columnX,
+        y: finalY
+      });
+    });
+  });
+
+  // Phase 4: Apply final positions to nodes
+  const layoutedNodes = nodes.map((node) => {
+    const finalPos = finalPositions.get(node.id);
+    if (finalPos) {
+      node.position = {
+        x: finalPos.x - nodeWidth / 2,
+        y: finalPos.y - nodeHeight / 2,
+      };
+    }
     return node;
   });
+
+  console.log('Hybrid layout complete:', { layoutedNodes: layoutedNodes.length, edges: edges.length });
 
   return { nodes: layoutedNodes, edges };
 };
