@@ -1,7 +1,8 @@
-
 import { Position } from '@xyflow/react';
 import { calculateOptimalHandlePosition } from '../utils/handleUtils';
 import { supabase } from '@/integrations/supabase/client';
+import dagre from 'dagre';
+import { Node, Edge } from '@xyflow/react';
 
 // Define types based on our Supabase schema
 export interface RegulatoryDocument {
@@ -317,3 +318,34 @@ export class GraphDataTransformer {
 }
 
 export const graphTransformer = new GraphDataTransformer();
+
+// Add this new function for Dagre layouting
+export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: 'LR', nodesep: 20, ranksep: 200 }); // LR = Left to Right
+  g.setDefaultEdgeLabel(() => ({}));
+
+  const nodeWidth = 150;
+  const nodeHeight = 60;
+
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(g);
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = g.node(node.id);
+    node.position = {
+      x: nodeWithPosition.x - nodeWidth / 2,
+      y: nodeWithPosition.y - nodeHeight / 2,
+    };
+    return node;
+  });
+
+  return { nodes: layoutedNodes, edges };
+};
