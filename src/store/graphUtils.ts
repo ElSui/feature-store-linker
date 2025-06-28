@@ -319,28 +319,48 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Intelligent hierarchical layout function with rank-based positioning
+// Intelligent hierarchical layout function with invisible anchor nodes for strict columnar positioning
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', align: 'UL', nodesep: 30, ranksep: 200 });
+  g.setGraph({ rankdir: 'LR', align: 'UL', nodesep: 25, ranksep: 180 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 150;
   const nodeHeight = 60;
 
-  // Assign ranks based on node type for strict hierarchy
+  // Step 1: Create invisible rank anchor nodes to define columns
+  const anchorNodes = ['RANK_0', 'RANK_1', 'RANK_2', 'RANK_3'];
+  anchorNodes.forEach(anchorId => {
+    g.setNode(anchorId, { 
+      width: 1, 
+      height: 1,
+      rank: parseInt(anchorId.split('_')[1]) // Extract rank number
+    });
+  });
+
+  // Step 2: Create the graph "spine" - invisible edges connecting anchor nodes
+  for (let i = 0; i < anchorNodes.length - 1; i++) {
+    g.setEdge(anchorNodes[i], anchorNodes[i + 1]);
+  }
+
+  // Step 3: Add all real nodes and assign them to their correct columns
   nodes.forEach((node) => {
     let rank = 0;
+    let anchorNode = 'RANK_0';
     
-    // Determine rank based on node type
+    // Determine rank and anchor based on node type
     if (node.type === 'document') {
-      rank = 0; // Column 0 - Documents (leftmost)
+      rank = 0;
+      anchorNode = 'RANK_0';
     } else if (node.type === 'usecase') {
-      rank = 1; // Column 1 - Use Cases
+      rank = 1;
+      anchorNode = 'RANK_1';
     } else if (node.type === 'risk') {
-      rank = 2; // Column 2 - Risk Indicators
+      rank = 2;
+      anchorNode = 'RANK_2';
     } else if (node.type === 'feature') {
-      rank = 3; // Column 3 - Features (rightmost)
+      rank = 3;
+      anchorNode = 'RANK_3';
     }
     
     g.setNode(node.id, { 
@@ -348,22 +368,31 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
       height: nodeHeight,
       rank: rank 
     });
+
+    // Create invisible edge from anchor node to this node to enforce column placement
+    g.setEdge(anchorNode, node.id);
   });
 
+  // Add all real edges between nodes
   edges.forEach((edge) => {
     g.setEdge(edge.source, edge.target);
   });
 
+  // Run the layout algorithm
   dagre.layout(g);
 
+  // Step 4: Extract only the real nodes with their calculated positions
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = g.node(node.id);
-    node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition.x - nodeWidth / 2,
+        y: nodeWithPosition.y - nodeHeight / 2,
+      }
     };
-    return node;
   });
 
+  // Return only the real elements (exclude invisible anchor nodes and edges)
   return { nodes: layoutedNodes, edges };
 };
