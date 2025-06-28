@@ -102,7 +102,7 @@ const Dashboard = () => {
               <Link to="/relationships">
                 <Button variant="outline" className="border-purple-200 hover:bg-purple-50 text-purple-700">
                   <Network className="mr-2 h-4 w-4" />
-                  Explore Graph
+                  View Graph
                 </Button>
               </Link>
               <Button variant="outline" className="hover:bg-gray-50">
@@ -125,8 +125,8 @@ const Dashboard = () => {
             Dashboard
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-            Streamline regulatory compliance with intelligent document management, 
-            risk assessment, and relationship mapping—all in one unified platform.
+            Manage regulatory documents, track compliance risks, and explore relationships 
+            across your compliance framework.
           </p>
         </div>
 
@@ -139,16 +139,16 @@ const Dashboard = () => {
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                  Interactive Relationship Graph
+                  Relationship Graph
                 </h3>
                 <p className="text-gray-700 mb-6 text-lg leading-relaxed">
-                  Discover hidden connections and visualize the complex web of compliance relationships 
-                  with our dynamic, interactive network visualization.
+                  Visualize connections between documents, use cases, risks, and features 
+                  in an interactive network view.
                 </p>
                 <Link to="/relationships">
                   <Button size="lg" className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 shadow-lg">
                     <Zap className="mr-2 h-5 w-5" />
-                    Launch Graph Explorer
+                    Open Graph View
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
