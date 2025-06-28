@@ -319,13 +319,13 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Custom hierarchical layout function with hybrid approach
+// Custom hierarchical layout function with improved hybrid approach
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-  console.log('Starting hybrid layout with nodes:', nodes.length, 'edges:', edges.length);
+  console.log('Starting improved hybrid layout with nodes:', nodes.length, 'edges:', edges.length);
 
   // Phase 1: Use Dagre for optimal grouping and spacing
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 });
+  g.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 300 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 200;
@@ -344,7 +344,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   // Let Dagre calculate the initial layout with good spacing
   dagre.layout(g);
 
-  // Phase 2: Extract Dagre's positioning and enforce column structure
+  // Phase 2: Extract Dagre's positioning and preserve the distribution
   const dagrePositions = new Map<string, { x: number; y: number }>();
   nodes.forEach((node) => {
     const nodeWithPosition = g.node(node.id);
@@ -354,16 +354,16 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     });
   });
 
-  // Define strict column positions
+  // Define strict column positions with better spacing
   const COLUMN_POSITIONS = {
     document: 200,   // Column 1
-    usecase: 500,    // Column 2  
-    risk: 800,       // Column 3
-    feature: 1100    // Column 4
+    usecase: 550,    // Column 2  
+    risk: 900,       // Column 3
+    feature: 1250    // Column 4
   };
 
-  // Group nodes by type and preserve their Dagre-calculated vertical relationships
-  const nodesByType: { [key: string]: Array<{ node: Node; dagreY: number }> } = {
+  // Group nodes by type and preserve their Dagre-calculated positions
+  const nodesByType: { [key: string]: Array<{ node: Node; dagreY: number; dagreX: number }> } = {
     document: [],
     usecase: [],
     risk: [],
@@ -375,17 +375,13 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     if (dagrePos && nodesByType[node.type]) {
       nodesByType[node.type].push({
         node,
-        dagreY: dagrePos.y
+        dagreY: dagrePos.y,
+        dagreX: dagrePos.x
       });
     }
   });
 
-  // Sort each column by Dagre's Y position to maintain relative ordering
-  Object.keys(nodesByType).forEach(type => {
-    nodesByType[type].sort((a, b) => a.dagreY - b.dagreY);
-  });
-
-  // Phase 3: Apply strict column positioning while preserving vertical grouping
+  // Phase 3: Apply column positioning while preserving Dagre's vertical logic
   const finalPositions = new Map<string, { x: number; y: number }>();
 
   Object.entries(nodesByType).forEach(([type, nodesInType]) => {
@@ -393,23 +389,12 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     
     if (nodesInType.length === 0) return;
 
-    // Calculate the center point of this column's nodes based on Dagre's spacing
-    const dagreYValues = nodesInType.map(item => item.dagreY);
-    const minY = Math.min(...dagreYValues);
-    const maxY = Math.max(...dagreYValues);
-    const centerY = (minY + maxY) / 2;
-
-    // Position nodes in this column, maintaining their relative spacing from Dagre
-    nodesInType.forEach((item, index) => {
-      // Preserve the relative offset from Dagre's center calculation
-      const relativeOffset = item.dagreY - centerY;
-      
-      // Apply the offset to create natural grouping
-      const finalY = 400 + relativeOffset; // 400 is our baseline center
-      
+    // For each node, use Dagre's original Y position directly
+    // This preserves the natural clustering and center-spreading effect
+    nodesInType.forEach((item) => {
       finalPositions.set(item.node.id, {
         x: columnX,
-        y: finalY
+        y: item.dagreY // Use Dagre's calculated Y position directly
       });
     });
   });
@@ -426,7 +411,7 @@ export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
     return node;
   });
 
-  console.log('Hybrid layout complete:', { layoutedNodes: layoutedNodes.length, edges: edges.length });
+  console.log('Improved hybrid layout complete:', { layoutedNodes: layoutedNodes.length, edges: edges.length });
 
   return { nodes: layoutedNodes, edges };
 };
