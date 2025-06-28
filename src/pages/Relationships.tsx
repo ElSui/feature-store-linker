@@ -52,7 +52,7 @@ const Relationships = () => {
           supabase.from('risk_feature_links').select('*'),
         ]);
 
-        // Create nodes
+        // Create nodes with null checks
         const allNodes: Node[] = [
           ...(documents || []).map(d => ({ 
             id: `doc-${d.id}`, 
@@ -96,7 +96,7 @@ const Relationships = () => {
           })),
         ];
 
-        // Create edges
+        // Create edges with null checks
         const allEdges: Edge[] = [
           ...(docUseCaseLinks || []).map(l => ({ 
             id: `e-doc${l.document_id}-uc${l.use_case_id}`, 
