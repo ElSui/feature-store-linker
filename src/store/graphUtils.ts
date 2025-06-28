@@ -1,3 +1,4 @@
+
 import { Position } from '@xyflow/react';
 import { calculateOptimalHandlePosition } from '../utils/handleUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -319,28 +320,55 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Custom hierarchical layout function with Dagre's built-in intelligence
+// Custom hierarchical layout function with rank anchors and generous spacing
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
 
-  // This is the new, complete body for the function.
+  // This is the new, complete body for the getLayoutedElements function.
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 }); // Generous spacing
+  // Use generous spacing AND a Left-to-Right layout.
+  g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 220 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 200;
   const nodeHeight = 70;
 
+  // --- START: Invisible Node Logic for Column Ranking ---
+
+  // 1. Create four invisible "rank anchor" nodes to define our columns
+  const rankAnchors = ['RANK_0', 'RANK_1', 'RANK_2', 'RANK_3'];
+  rankAnchors.forEach(id => g.setNode(id, { width: 0, height: 0 }));
+
+  // 2. Create an invisible "spine" to enforce the order of the columns
+  g.setEdge('RANK_0', 'RANK_1', { style: 'opacity: 0' });
+  g.setEdge('RANK_1', 'RANK_2', { style: 'opacity: 0' });
+  g.setEdge('RANK_2', 'RANK_3', { style: 'opacity: 0' });
+
+  // 3. Assign each REAL node to its correct rank anchor
   nodes.forEach((node) => {
     g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    if (node.type === 'document') {
+      g.setEdge('RANK_0', node.id, { style: 'opacity: 0' });
+    } else if (node.type === 'usecase') {
+      g.setEdge('RANK_1', node.id, { style: 'opacity: 0' });
+    } else if (node.type === 'risk') {
+      g.setEdge('RANK_2', node.id, { style: 'opacity: 0' });
+    } else if (node.type === 'feature') {
+      g.setEdge('RANK_3', node.id, { style: 'opacity: 0' });
+    }
   });
 
+  // --- END: Invisible Node Logic ---
+
+  // Add the REAL, visible edges to the graph
   edges.forEach((edge) => {
     g.setEdge(edge.source, edge.target);
   });
 
+  // Run the layout algorithm
   dagre.layout(g);
 
+  // Apply the calculated positions to our real nodes
   const layoutedNodes = nodes.map((node) => {
     const nodeWithPosition = g.node(node.id);
     node.position = {
