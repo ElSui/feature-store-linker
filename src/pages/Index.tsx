@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network, LoaderCircle, Sparkles, TrendingUp, Zap } from 'lucide-react';
+import { FileText, Target, AlertTriangle, Cpu, ArrowRight, Network, LoaderCircle, Compass, TrendingUp, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
@@ -89,13 +89,13 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
-                <Sparkles className="h-8 w-8 text-white" />
+                <Compass className="h-8 w-8 text-white" />
               </div>
               <div>
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-indigo-800 bg-clip-text text-transparent">
-                  Nexus
+                  Compliance Compass
                 </h1>
-                <p className="text-gray-600 mt-1 text-lg">Intelligent Compliance Management</p>
+                <p className="text-gray-600 mt-1 text-lg">Knowledge & Relationship Hub</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -122,7 +122,7 @@ const Dashboard = () => {
         {/* Welcome Section */}
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Welcome to Your Compliance Command Center
+            Dashboard
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
             Streamline regulatory compliance with intelligent document management, 
@@ -234,28 +234,28 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* System Status */}
         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-200/50 p-8">
           <h3 className="text-2xl font-bold text-gray-900 mb-6">System Status</h3>
           <div className="space-y-4">
             <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl border border-blue-100">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse"></div>
-                <span className="text-gray-900 font-medium">Connected to live Supabase database</span>
+                <span className="text-gray-900 font-medium">Database Connection</span>
               </div>
               <span className="text-sm text-gray-500 bg-white/70 px-3 py-1 rounded-full">Active</span>
             </div>
             <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-2xl border border-emerald-100">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
-                <span className="text-gray-900 font-medium">Real-time data synchronization enabled</span>
+                <span className="text-gray-900 font-medium">Real-time Sync</span>
               </div>
               <span className="text-sm text-gray-500 bg-white/70 px-3 py-1 rounded-full">Operational</span>
             </div>
             <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl border border-purple-100">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full"></div>
-                <span className="text-gray-900 font-medium">Graph visualization ready for exploration</span>
+                <span className="text-gray-900 font-medium">Graph Visualization</span>
               </div>
               <span className="text-sm text-gray-500 bg-white/70 px-3 py-1 rounded-full">Ready</span>
             </div>
