@@ -27,13 +27,14 @@ const Relationships = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log('Starting to fetch data...');
 
         // Fetch all entities
         const [
-          { data: documents },
-          { data: useCases },
-          { data: risks },
-          { data: features },
+          { data: documents, error: docsError },
+          { data: useCases, error: useCasesError },
+          { data: risks, error: risksError },
+          { data: features, error: featuresError },
         ] = await Promise.all([
           supabase.from('regulatory_documents').select('*'),
           supabase.from('use_cases').select('*'),
@@ -41,16 +42,31 @@ const Relationships = () => {
           supabase.from('features').select('*'),
         ]);
 
+        console.log('Fetched entities:', { documents, useCases, risks, features });
+
+        // Check for errors
+        if (docsError) throw docsError;
+        if (useCasesError) throw useCasesError;
+        if (risksError) throw risksError;
+        if (featuresError) throw featuresError;
+
         // Fetch all links
         const [
-          { data: docUseCaseLinks },
-          { data: useCaseRiskLinks },
-          { data: riskFeatureLinks },
+          { data: docUseCaseLinks, error: docUseCaseError },
+          { data: useCaseRiskLinks, error: useCaseRiskError },
+          { data: riskFeatureLinks, error: riskFeatureError },
         ] = await Promise.all([
           supabase.from('document_use_case_links').select('*'),
           supabase.from('use_case_risk_links').select('*'),
           supabase.from('risk_feature_links').select('*'),
         ]);
+
+        console.log('Fetched links:', { docUseCaseLinks, useCaseRiskLinks, riskFeatureLinks });
+
+        // Check for link errors
+        if (docUseCaseError) throw docUseCaseError;
+        if (useCaseRiskError) throw useCaseRiskError;
+        if (riskFeatureError) throw riskFeatureError;
 
         // Create nodes with null checks
         const allNodes: Node[] = [
@@ -120,17 +136,21 @@ const Relationships = () => {
             animated: true
           })),
         ];
+
+        console.log('Created nodes and edges:', { nodeCount: allNodes.length, edgeCount: allEdges.length });
         
         // Calculate layout using Dagre
         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges);
+        
+        console.log('Applied layout:', { layoutedNodes: layoutedNodes.length, layoutedEdges: layoutedEdges.length });
         
         setNodes(layoutedNodes);
         setEdges(layoutedEdges);
         setStats({ entities: allNodes.length, connections: allEdges.length });
 
       } catch (err) {
+        console.error('Error fetching data:', err);
         setError('Failed to fetch graph data.');
-        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -166,13 +186,14 @@ const Relationships = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navigation />
-      <div className="flex-grow relative">
+      <div className="flex-grow relative" style={{ height: 'calc(100vh - 64px)' }}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
           nodeTypes={nodeTypes}
           fitView
           className="bg-gray-50"
+          style={{ width: '100%', height: '100%' }}
         >
           <Controls />
           <Background color="#e5e7eb" gap={20} />
