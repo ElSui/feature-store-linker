@@ -1,11 +1,13 @@
 
-import React, { useState, useEffect } from 'react';
-import { ReactFlow, Controls, Background, Panel, Node, Edge } from '@xyflow/react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ReactFlow, Controls, Background, Node, Edge } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import Navigation from '@/components/Navigation';
 import GraphNode from '@/components/graph/GraphNode';
+import GraphSidebar from '@/components/graph/GraphSidebar';
 import { getLayoutedElements } from '@/store/graphUtils';
+import { NetworkAnalyzer } from '@/store/networkUtils';
 import { supabase } from '@/integrations/supabase/client';
 import { LoaderCircle, AlertCircle } from 'lucide-react';
 
@@ -17,11 +19,25 @@ const nodeTypes = {
 };
 
 const Relationships = () => {
+  const [allNodes, setAllNodes] = useState<Node[]>([]);
+  const [allEdges, setAllEdges] = useState<Edge[]>([]);
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ entities: 0, connections: 0 });
+  
+  // Interactive states
+  const [visibleTypes, setVisibleTypes] = useState({
+    document: true,
+    usecase: true,
+    risk: true,
+    feature: true,
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [highlightedNodes, setHighlightedNodes] = useState<Set<string>>(new Set());
+
+  const networkAnalyzer = new NetworkAnalyzer();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,14 +85,15 @@ const Relationships = () => {
         if (riskFeatureError) throw riskFeatureError;
 
         // Create nodes with null checks
-        const allNodes: Node[] = [
+        const fetchedNodes: Node[] = [
           ...(documents || []).map(d => ({ 
             id: `doc-${d.id}`, 
             type: 'document', 
             data: { 
               label: d.name, 
               entity: d,
-              entityType: 'Document' 
+              entityType: 'Document',
+              onHighlight: handleNodeHighlight
             }, 
             position: { x: 0, y: 0 } 
           })),
@@ -86,7 +103,8 @@ const Relationships = () => {
             data: { 
               label: u.name, 
               entity: u,
-              entityType: 'Use Case' 
+              entityType: 'Use Case',
+              onHighlight: handleNodeHighlight
             }, 
             position: { x: 0, y: 0 } 
           })),
@@ -96,7 +114,8 @@ const Relationships = () => {
             data: { 
               label: r.name, 
               entity: r,
-              entityType: 'Risk Indicator' 
+              entityType: 'Risk Indicator',
+              onHighlight: handleNodeHighlight
             }, 
             position: { x: 0, y: 0 } 
           })),
@@ -106,47 +125,46 @@ const Relationships = () => {
             data: { 
               label: f.name, 
               entity: f,
-              entityType: 'Feature' 
+              entityType: 'Feature',
+              onHighlight: handleNodeHighlight
             }, 
             position: { x: 0, y: 0 } 
           })),
         ];
 
-        // Create edges with null checks
-        const allEdges: Edge[] = [
+        // Create edges with improved styling
+        const fetchedEdges: Edge[] = [
           ...(docUseCaseLinks || []).map(l => ({ 
             id: `e-doc${l.document_id}-uc${l.use_case_id}`, 
             source: `doc-${l.document_id}`, 
             target: `uc-${l.use_case_id}`,
             type: 'smoothstep',
-            animated: true
+            animated: true,
+            style: { stroke: '#a1a1aa', strokeWidth: 2 }
           })),
           ...(useCaseRiskLinks || []).map(l => ({ 
             id: `e-uc${l.use_case_id}-risk${l.risk_indicator_id}`, 
             source: `uc-${l.use_case_id}`, 
             target: `risk-${l.risk_indicator_id}`,
             type: 'smoothstep',
-            animated: true
+            animated: true,
+            style: { stroke: '#a1a1aa', strokeWidth: 2 }
           })),
           ...(riskFeatureLinks || []).map(l => ({ 
             id: `e-risk${l.risk_indicator_id}-feat${l.feature_id}`, 
             source: `risk-${l.risk_indicator_id}`, 
             target: `feat-${l.feature_id}`,
             type: 'smoothstep',
-            animated: true
+            animated: true,
+            style: { stroke: '#a1a1aa', strokeWidth: 2 }
           })),
         ];
 
-        console.log('Created nodes and edges:', { nodeCount: allNodes.length, edgeCount: allEdges.length });
+        console.log('Created nodes and edges:', { nodeCount: fetchedNodes.length, edgeCount: fetchedEdges.length });
         
-        // Calculate layout using Dagre
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(allNodes, allEdges);
-        
-        console.log('Applied layout:', { layoutedNodes: layoutedNodes.length, layoutedEdges: layoutedEdges.length });
-        
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
-        setStats({ entities: allNodes.length, connections: allEdges.length });
+        setAllNodes(fetchedNodes);
+        setAllEdges(fetchedEdges);
+        setStats({ entities: fetchedNodes.length, connections: fetchedEdges.length });
 
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -158,6 +176,73 @@ const Relationships = () => {
 
     fetchData();
   }, []);
+
+  // Update visible nodes and edges based on filters and search
+  useEffect(() => {
+    let filteredNodes = allNodes.filter(node => 
+      visibleTypes[node.type as keyof typeof visibleTypes]
+    );
+
+    let filteredEdges = allEdges.filter(edge => {
+      const sourceNode = allNodes.find(n => n.id === edge.source);
+      const targetNode = allNodes.find(n => n.id === edge.target);
+      return sourceNode && targetNode && 
+             visibleTypes[sourceNode.type as keyof typeof visibleTypes] &&
+             visibleTypes[targetNode.type as keyof typeof visibleTypes];
+    });
+
+    // Apply search highlighting
+    if (searchTerm) {
+      const searchResults = networkAnalyzer.findRelatedNodes(allNodes, allEdges, searchTerm);
+      setHighlightedNodes(new Set(searchResults.map(node => node.id)));
+      
+      // Update node data with highlight/dim state
+      filteredNodes = filteredNodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          isHighlighted: searchResults.some(r => r.id === node.id),
+          isDimmed: !searchResults.some(r => r.id === node.id) && searchResults.length > 0
+        }
+      }));
+    } else {
+      setHighlightedNodes(new Set());
+      // Reset highlight states
+      filteredNodes = filteredNodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          isHighlighted: false,
+          isDimmed: false
+        }
+      }));
+    }
+
+    // Calculate layout
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(filteredNodes, filteredEdges);
+    
+    console.log('Applied layout:', { layoutedNodes: layoutedNodes.length, layoutedEdges: layoutedEdges.length });
+    
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+  }, [allNodes, allEdges, visibleTypes, searchTerm, networkAnalyzer]);
+
+  const handleTypeToggle = useCallback((type: keyof typeof visibleTypes) => {
+    setVisibleTypes(prev => ({
+      ...prev,
+      [type]: !prev[type]
+    }));
+  }, []);
+
+  const handleSearchChange = useCallback((term: string) => {
+    setSearchTerm(term);
+  }, []);
+
+  const handleNodeHighlight = useCallback((nodeId: string) => {
+    const relatedNodes = networkAnalyzer.findConnectedNodes(allNodes, allEdges, nodeId);
+    setHighlightedNodes(new Set(relatedNodes.map(node => node.id)));
+    setSearchTerm(''); // Clear search when manually highlighting
+  }, [allNodes, allEdges, networkAnalyzer]);
 
   if (loading) {
     return (
@@ -197,13 +282,13 @@ const Relationships = () => {
         >
           <Controls />
           <Background color="#e5e7eb" gap={20} />
-          <Panel position="top-left" className="p-4 bg-white rounded-lg shadow-md border">
-            <h3 className="font-bold text-lg mb-2">Knowledge Graph</h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="font-medium">Entities:</span> {stats.entities}</p>
-              <p><span className="font-medium">Connections:</span> {stats.connections}</p>
-            </div>
-          </Panel>
+          <GraphSidebar
+            stats={stats}
+            visibleTypes={visibleTypes}
+            onTypeToggle={handleTypeToggle}
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+          />
         </ReactFlow>
       </div>
     </div>

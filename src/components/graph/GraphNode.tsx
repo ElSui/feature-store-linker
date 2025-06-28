@@ -25,7 +25,7 @@ interface GraphNodeProps {
 
 const GraphNode = memo(({ data, type, id }: GraphNodeProps) => {
   const getNodeStyle = () => {
-    const baseStyle = "p-3 rounded-lg border-2 shadow-lg min-w-[120px] text-center text-sm font-medium cursor-pointer transition-all duration-200 hover:shadow-xl relative";
+    const baseStyle = "p-3 rounded-lg border-2 shadow-lg min-w-[150px] max-w-[250px] text-center text-sm font-medium cursor-pointer transition-all duration-200 hover:shadow-xl relative";
     
     let colorClasses = "";
     switch (type) {
@@ -47,9 +47,9 @@ const GraphNode = memo(({ data, type, id }: GraphNodeProps) => {
 
     // Apply visual states
     if (data.isHighlighted) {
-      colorClasses += " ring-4 ring-blue-400 ring-opacity-60 scale-105";
+      colorClasses += " ring-4 ring-blue-400 ring-opacity-60 scale-105 z-10";
     } else if (data.isDimmed) {
-      colorClasses += " opacity-40";
+      colorClasses += " opacity-30";
     }
     
     return cn(baseStyle, colorClasses);

@@ -322,7 +322,7 @@ export const graphTransformer = new GraphDataTransformer();
 // Add this new function for Dagre layouting
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: 20, ranksep: 200 }); // LR = Left to Right
+  g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 250 }); // Updated spacing values
   g.setDefaultEdgeLabel(() => ({}));
 
   const nodeWidth = 150;
