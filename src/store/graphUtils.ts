@@ -1,4 +1,3 @@
-
 import { Position } from '@xyflow/react';
 import { calculateOptimalHandlePosition } from '../utils/handleUtils';
 import { supabase } from '@/integrations/supabase/client';
@@ -320,132 +319,36 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Custom hierarchical layout function with perfect column control
+// Custom hierarchical layout function with Dagre's built-in intelligence
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-  console.log('Starting custom layout with nodes:', nodes.length, 'edges:', edges.length);
+  console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
 
-  // Define layout constants
-  const COLUMN_WIDTH = 300;
-  const NODE_HEIGHT = 80;
+  // This is the new, complete body for the function.
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: 'LR', nodesep: 75, ranksep: 250 }); // Generous spacing
+  g.setDefaultEdgeLabel(() => ({}));
 
-  // Create a map to store calculated positions
-  const nodePositions = new Map<string, { x: number; y: number }>();
+  const nodeWidth = 200;
+  const nodeHeight = 70;
 
-  // Helper function to find parent nodes for a given child node
-  const findParentNodes = (childNodeId: string, parentType: string): Node[] => {
-    const parentEdges = edges.filter(edge => edge.target === childNodeId);
-    return parentEdges
-      .map(edge => nodes.find(node => node.id === edge.source && node.type === parentType))
-      .filter(node => node !== undefined) as Node[];
-  };
-
-  // Helper function to deconflict positions in a column
-  const deconflictColumn = (columnNodes: Node[]) => {
-    // Sort nodes by their current y position
-    const sortedNodes = columnNodes.sort((a, b) => {
-      const posA = nodePositions.get(a.id)!;
-      const posB = nodePositions.get(b.id)!;
-      return posA.y - posB.y;
-    });
-
-    // Adjust positions to prevent overlaps
-    for (let i = 1; i < sortedNodes.length; i++) {
-      const currentNode = sortedNodes[i];
-      const previousNode = sortedNodes[i - 1];
-      
-      const currentPos = nodePositions.get(currentNode.id)!;
-      const previousPos = nodePositions.get(previousNode.id)!;
-      
-      if (currentPos.y < previousPos.y + NODE_HEIGHT) {
-        nodePositions.set(currentNode.id, {
-          x: currentPos.x,
-          y: previousPos.y + NODE_HEIGHT
-        });
-      }
-    }
-  };
-
-  // Phase 1: Calculate ideal positions (with potential overlaps)
-
-  // Position Documents (Column 0)
-  const documentNodes = nodes.filter(node => node.type === 'document');
-  documentNodes.forEach((node, index) => {
-    nodePositions.set(node.id, {
-      x: 0,
-      y: index * NODE_HEIGHT
-    });
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
   });
 
-  // Position Use Cases (Column 1)
-  const useCaseNodes = nodes.filter(node => node.type === 'usecase');
-  useCaseNodes.forEach(node => {
-    const parentDocs = findParentNodes(node.id, 'document');
-    let averageY = 0;
-    
-    if (parentDocs.length > 0) {
-      const parentYPositions = parentDocs.map(parent => nodePositions.get(parent.id)!.y);
-      averageY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
-    }
-    
-    nodePositions.set(node.id, {
-      x: COLUMN_WIDTH,
-      y: averageY
-    });
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
   });
 
-  // Position Risks (Column 2)
-  const riskNodes = nodes.filter(node => node.type === 'risk');
-  riskNodes.forEach(node => {
-    const parentUseCases = findParentNodes(node.id, 'usecase');
-    let averageY = 0;
-    
-    if (parentUseCases.length > 0) {
-      const parentYPositions = parentUseCases.map(parent => nodePositions.get(parent.id)!.y);
-      averageY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
-    }
-    
-    nodePositions.set(node.id, {
-      x: COLUMN_WIDTH * 2,
-      y: averageY
-    });
-  });
+  dagre.layout(g);
 
-  // Position Features (Column 3)
-  const featureNodes = nodes.filter(node => node.type === 'feature');
-  featureNodes.forEach(node => {
-    const parentRisks = findParentNodes(node.id, 'risk');
-    let averageY = 0;
-    
-    if (parentRisks.length > 0) {
-      const parentYPositions = parentRisks.map(parent => nodePositions.get(parent.id)!.y);
-      averageY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
-    }
-    
-    nodePositions.set(node.id, {
-      x: COLUMN_WIDTH * 3,
-      y: averageY
-    });
-  });
-
-  // Phase 2: De-conflict positions (cleanup pass)
-  deconflictColumn(documentNodes);
-  deconflictColumn(useCaseNodes);
-  deconflictColumn(riskNodes);
-  deconflictColumn(featureNodes);
-
-  // Finalize and return
-  const layoutedNodes = nodes.map(node => {
-    const finalPosition = nodePositions.get(node.id)!;
-    return {
-      ...node,
-      position: {
-        x: finalPosition.x,
-        y: finalPosition.y
-      }
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = g.node(node.id);
+    node.position = {
+      x: nodeWithPosition.x - nodeWidth / 2,
+      y: nodeWithPosition.y - nodeHeight / 2,
     };
+    return node;
   });
 
-  console.log('Custom layout complete:', { layoutedNodes: layoutedNodes.length });
-  
   return { nodes: layoutedNodes, edges };
 };
