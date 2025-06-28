@@ -320,63 +320,132 @@ export class GraphDataTransformer {
 
 export const graphTransformer = new GraphDataTransformer();
 
-// Custom hierarchical layout function with rank anchors and generous spacing
+// Custom hierarchical layout function with perfect column control
 export const getLayoutedElements = (nodes: Node[], edges: Edge[]) => {
-  console.log('Starting Dagre layout with nodes:', nodes.length, 'edges:', edges.length);
+  console.log('Starting custom layout with nodes:', nodes.length, 'edges:', edges.length);
 
-  // This is the new, complete body for the getLayoutedElements function.
-  const g = new dagre.graphlib.Graph();
-  // Use generous spacing AND a Left-to-Right layout.
-  g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 220 });
-  g.setDefaultEdgeLabel(() => ({}));
+  // Define layout constants
+  const COLUMN_WIDTH = 300;
+  const NODE_HEIGHT = 80;
 
-  const nodeWidth = 200;
-  const nodeHeight = 70;
+  // Create a map to store calculated positions
+  const nodePositions = new Map<string, { x: number; y: number }>();
 
-  // --- START: Invisible Node Logic for Column Ranking ---
+  // Helper function to find parent nodes for a given child node
+  const findParentNodes = (childNodeId: string, parentType: string): Node[] => {
+    const parentEdges = edges.filter(edge => edge.target === childNodeId);
+    return parentEdges
+      .map(edge => nodes.find(node => node.id === edge.source && node.type === parentType))
+      .filter(node => node !== undefined) as Node[];
+  };
 
-  // 1. Create four invisible "rank anchor" nodes to define our columns
-  const rankAnchors = ['RANK_0', 'RANK_1', 'RANK_2', 'RANK_3'];
-  rankAnchors.forEach(id => g.setNode(id, { width: 0, height: 0 }));
+  // Helper function to deconflict positions in a column
+  const deconflictColumn = (columnNodes: Node[]) => {
+    // Sort nodes by their current y position
+    const sortedNodes = columnNodes.sort((a, b) => {
+      const posA = nodePositions.get(a.id)!;
+      const posB = nodePositions.get(b.id)!;
+      return posA.y - posB.y;
+    });
 
-  // 2. Create an invisible "spine" to enforce the order of the columns
-  g.setEdge('RANK_0', 'RANK_1', { style: 'opacity: 0' });
-  g.setEdge('RANK_1', 'RANK_2', { style: 'opacity: 0' });
-  g.setEdge('RANK_2', 'RANK_3', { style: 'opacity: 0' });
-
-  // 3. Assign each REAL node to its correct rank anchor
-  nodes.forEach((node) => {
-    g.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-    if (node.type === 'document') {
-      g.setEdge('RANK_0', node.id, { style: 'opacity: 0' });
-    } else if (node.type === 'usecase') {
-      g.setEdge('RANK_1', node.id, { style: 'opacity: 0' });
-    } else if (node.type === 'risk') {
-      g.setEdge('RANK_2', node.id, { style: 'opacity: 0' });
-    } else if (node.type === 'feature') {
-      g.setEdge('RANK_3', node.id, { style: 'opacity: 0' });
+    // Adjust positions to prevent overlaps
+    for (let i = 1; i < sortedNodes.length; i++) {
+      const currentNode = sortedNodes[i];
+      const previousNode = sortedNodes[i - 1];
+      
+      const currentPos = nodePositions.get(currentNode.id)!;
+      const previousPos = nodePositions.get(previousNode.id)!;
+      
+      if (currentPos.y < previousPos.y + NODE_HEIGHT) {
+        nodePositions.set(currentNode.id, {
+          x: currentPos.x,
+          y: previousPos.y + NODE_HEIGHT
+        });
+      }
     }
+  };
+
+  // Phase 1: Calculate ideal positions (with potential overlaps)
+
+  // Position Documents (Column 0)
+  const documentNodes = nodes.filter(node => node.type === 'document');
+  documentNodes.forEach((node, index) => {
+    nodePositions.set(node.id, {
+      x: 0,
+      y: index * NODE_HEIGHT
+    });
   });
 
-  // --- END: Invisible Node Logic ---
-
-  // Add the REAL, visible edges to the graph
-  edges.forEach((edge) => {
-    g.setEdge(edge.source, edge.target);
+  // Position Use Cases (Column 1)
+  const useCaseNodes = nodes.filter(node => node.type === 'usecase');
+  useCaseNodes.forEach(node => {
+    const parentDocs = findParentNodes(node.id, 'document');
+    let averageY = 0;
+    
+    if (parentDocs.length > 0) {
+      const parentYPositions = parentDocs.map(parent => nodePositions.get(parent.id)!.y);
+      averageY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
+    }
+    
+    nodePositions.set(node.id, {
+      x: COLUMN_WIDTH,
+      y: averageY
+    });
   });
 
-  // Run the layout algorithm
-  dagre.layout(g);
+  // Position Risks (Column 2)
+  const riskNodes = nodes.filter(node => node.type === 'risk');
+  riskNodes.forEach(node => {
+    const parentUseCases = findParentNodes(node.id, 'usecase');
+    let averageY = 0;
+    
+    if (parentUseCases.length > 0) {
+      const parentYPositions = parentUseCases.map(parent => nodePositions.get(parent.id)!.y);
+      averageY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
+    }
+    
+    nodePositions.set(node.id, {
+      x: COLUMN_WIDTH * 2,
+      y: averageY
+    });
+  });
 
-  // Apply the calculated positions to our real nodes
-  const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = g.node(node.id);
-    node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
+  // Position Features (Column 3)
+  const featureNodes = nodes.filter(node => node.type === 'feature');
+  featureNodes.forEach(node => {
+    const parentRisks = findParentNodes(node.id, 'risk');
+    let averageY = 0;
+    
+    if (parentRisks.length > 0) {
+      const parentYPositions = parentRisks.map(parent => nodePositions.get(parent.id)!.y);
+      averageY = parentYPositions.reduce((sum, y) => sum + y, 0) / parentYPositions.length;
+    }
+    
+    nodePositions.set(node.id, {
+      x: COLUMN_WIDTH * 3,
+      y: averageY
+    });
+  });
+
+  // Phase 2: De-conflict positions (cleanup pass)
+  deconflictColumn(documentNodes);
+  deconflictColumn(useCaseNodes);
+  deconflictColumn(riskNodes);
+  deconflictColumn(featureNodes);
+
+  // Finalize and return
+  const layoutedNodes = nodes.map(node => {
+    const finalPosition = nodePositions.get(node.id)!;
+    return {
+      ...node,
+      position: {
+        x: finalPosition.x,
+        y: finalPosition.y
+      }
     };
-    return node;
   });
 
+  console.log('Custom layout complete:', { layoutedNodes: layoutedNodes.length });
+  
   return { nodes: layoutedNodes, edges };
 };
